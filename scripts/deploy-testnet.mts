@@ -178,8 +178,12 @@ function writeEnv(contractId: string, chainPlans: Record<string, number>): void 
     ...Object.entries(PLAN_ENV_KEYS)
       .filter(([planId]) => chainPlans[planId] != null)
       .map(([planId, suffix]) => `CHAIN_PLAN_${suffix}=${chainPlans[planId]}`),
-    '',
   ];
+  // Keys this script does not own (the second corridor instance written by `deploy:sv`, its chain
+  // plans, user switches such as OFFRAMP) are carried over unchanged.
+  const written = new Set(lines.map((l) => l.split('=')[0]!));
+  for (const [k, v] of Object.entries(existing)) if (v !== undefined && !written.has(k)) lines.push(`${k}=${v}`);
+  lines.push('');
   writeFileSync(ENV_FILE, lines.join('\n'), 'utf8');
   log(`wrote ${ENV_FILE}`);
 }

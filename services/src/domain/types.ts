@@ -227,6 +227,8 @@ export interface DemoState {
   chainPlans?: Record<string, number>;
   /** Testnet mode: the contract these chain plan ids belong to; a persisted snapshot for another contract is discarded. */
   chainContractId?: string;
+  /** Testnet mode: the contract instance of each corridor (`chainContractId` is the Colombia one). */
+  chainContractIds?: Partial<Record<CorridorId, string>>;
 }
 
 /**

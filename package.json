@@ -17,6 +17,8 @@
     "infra:up": "node scripts/infra-up.mjs",
     "deploy:testnet": "tsx scripts/deploy-testnet.mts",
     "smoke:testnet": "tsx scripts/testnet-smoke.mts",
+    "deploy:sv": "tsx scripts/deploy-sv-instance.mts",
+    "check:sv-testnet": "tsx scripts/sv-testnet-check.mts",
     "sim:testnet": "tsx scripts/sim-testnet.mts",
     "jobs:run": "node scripts/jobs-run.mjs",
     "test": "npm test -w services && npm test -w web",
@@ -29,6 +31,7 @@
     "check:bundle": "node scripts/check-bundle.mjs"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
     "tsx": "^4.23.0",
     "typescript": "^5.9.0"
   }

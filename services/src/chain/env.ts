@@ -3,6 +3,7 @@
 // None of these names carries the VITE_ prefix, so Vite never puts them in the browser bundle; the
 // only VITE_ variable in that file is VITE_DEMO_MODE.
 
+import { CORRIDORS, type CorridorId } from '../../../config/corridors';
 import type { ChainClientConfig } from './client';
 
 export const TESTNET_RPC_URL = 'https://soroban-testnet.stellar.org';
@@ -12,19 +13,48 @@ export const TESTNET_HORIZON_URL = 'https://horizon-testnet.stellar.org';
 /** Fee-paying channel accounts the deploy script creates (`CHANNEL_SECRET_1..N`). */
 export const CHANNEL_COUNT = 8;
 
-/** Demo buyer id → suffix of its `BUYER_SECRET_*` / `CHAIN_PLAN_*` variables. */
+/**
+ * Demo buyer id → suffix of its `BUYER_SECRET_*` / `BUYER_PUBLIC_*` variables, for every corridor.
+ * `deploy:testnet` creates, funds and trustlines all of them; `deploy:sv` does the same for the
+ * El Salvador buyers when it runs first.
+ */
 export const BUYER_ENV_KEYS: Record<string, string> = {
   'buyer-maria': 'MARIA',
   'buyer-andres': 'ANDRES',
   'buyer-camila': 'CAMILA',
+  'buyer-roxana': 'ROXANA',
+  'buyer-marvin': 'MARVIN',
+  'buyer-doris': 'DORIS',
+  'buyer-oscar': 'OSCAR',
 };
 
-/** Demo plan id → the buyer whose variables carry its chain plan id. */
+/** Demo buyers whose accounts each corridor's contract instance uses (`chainConfigFor` requires their secrets). */
+export const CORRIDOR_BUYERS: Readonly<Record<CorridorId, readonly string[]>> = {
+  co: ['buyer-maria', 'buyer-andres', 'buyer-camila'],
+  sv: ['buyer-roxana', 'buyer-marvin', 'buyer-doris', 'buyer-oscar'],
+};
+
+/**
+ * Colombia demo plan id → suffix of its `CHAIN_PLAN_*` variable. Only these are seeded by
+ * `deploy:testnet` on the Colombia instance; the El Salvador plans are in `SV_PLAN_ENV_KEYS` and
+ * are seeded by the server's reset on the El Salvador instance.
+ */
 export const PLAN_ENV_KEYS: Record<string, string> = {
   'plan-maria': 'MARIA',
   'plan-andres': 'ANDRES',
   'plan-camila': 'CAMILA',
 };
+
+/** El Salvador demo plan id → suffix of its `CHAIN_PLAN_*` variable. */
+export const SV_PLAN_ENV_KEYS: Record<string, string> = {
+  'plan-roxana': 'ROXANA',
+  'plan-marvin': 'MARVIN',
+  'plan-doris': 'DORIS',
+  'plan-oscar': 'OSCAR',
+};
+
+/** Every demo plan with a `CHAIN_PLAN_*` variable, both corridors. */
+export const ALL_PLAN_ENV_KEYS: Record<string, string> = { ...PLAN_ENV_KEYS, ...SV_PLAN_ENV_KEYS };
 
 export type EnvVars = Record<string, string | undefined>;
 
@@ -46,7 +76,7 @@ export function parseDotenv(text: string): Record<string, string> {
 
 function required(env: EnvVars, key: string): string {
   const v = env[key];
-  if (!v) throw new Error(`${key} is not set; run \`npm run deploy:testnet\` to create .env.testnet`);
+  if (!v) throw new Error(`${key} is not set; run \`npm run deploy:testnet\` (and \`npm run deploy:sv\` for the El Salvador instance) to write .env.testnet`);
   return v;
 }
 
@@ -69,26 +99,60 @@ export function channelSecretsFromEnv(env: EnvVars): string[] {
   return out;
 }
 
-export function chainConfigFromEnv(env: EnvVars): ChainClientConfig {
+/**
+ * Secrets of every demo buyer that has one in the environment. A corridor's own buyers are
+ * required (`chainConfigFor`); the other corridor's are included when present so one ChainClient
+ * can also mint test USDC to them.
+ */
+export function buyerSecretsFromEnv(env: EnvVars): Record<string, string> {
   const buyers: Record<string, string> = {};
-  for (const [buyerId, suffix] of Object.entries(BUYER_ENV_KEYS)) buyers[buyerId] = required(env, `BUYER_SECRET_${suffix}`);
+  for (const [buyerId, suffix] of Object.entries(BUYER_ENV_KEYS)) {
+    const v = env[`BUYER_SECRET_${suffix}`];
+    if (v) buyers[buyerId] = v;
+  }
+  return buyers;
+}
+
+/**
+ * ChainClient configuration of one corridor's payment_plan instance. The contract id and the payee
+ * come from the variables `config/corridors.ts` names for the corridor (`chainEnv`); the operator,
+ * the test USDC and the channel accounts are shared by every instance.
+ */
+export function chainConfigFor(corridor: CorridorId, env: EnvVars): ChainClientConfig {
+  const keys = CORRIDORS[corridor].chainEnv;
+  const buyers = buyerSecretsFromEnv(env);
+  for (const buyerId of CORRIDOR_BUYERS[corridor]) if (!buyers[buyerId]) required(env, `BUYER_SECRET_${BUYER_ENV_KEYS[buyerId]}`);
   return {
     rpcUrl: env.STELLAR_RPC_URL || TESTNET_RPC_URL,
     networkPassphrase: env.STELLAR_NETWORK_PASSPHRASE || TESTNET_PASSPHRASE,
-    contractId: required(env, 'PAYMENT_PLAN_CONTRACT_ID'),
+    contractId: required(env, keys.contractIdKey),
     usdcSacId: required(env, 'USDC_SAC_ID'),
     usdcIssuerSecret: required(env, 'USDC_ISSUER_SECRET'),
     operatorSecret: required(env, 'OPERATOR_SECRET'),
     buyers,
-    payeeBackendPublic: required(env, 'PAYEE_BACKEND_PUBLIC'),
+    payeeBackendPublic: required(env, keys.payeePublicKey),
     channelSecrets: channelSecretsFromEnv(env),
   };
 }
 
-/** Chain plan ids written by the deploy script, keyed by demo plan id; missing ones are skipped. */
+/** The Colombia instance (the original, required configuration). */
+export function chainConfigFromEnv(env: EnvVars): ChainClientConfig {
+  return chainConfigFor('co', env);
+}
+
+/**
+ * A corridor's instance when it has been deployed: null while its contract id variable is absent,
+ * so the server can run with the Colombia instance alone and keep that corridor's plans off chain.
+ * Any other missing variable is an error, not a silent downgrade.
+ */
+export function optionalChainConfigFor(corridor: CorridorId, env: EnvVars): ChainClientConfig | null {
+  return env[CORRIDORS[corridor].chainEnv.contractIdKey] ? chainConfigFor(corridor, env) : null;
+}
+
+/** Chain plan ids written by the deploy scripts, keyed by demo plan id (both corridors); missing ones are skipped. */
 export function chainPlansFromEnv(env: EnvVars): Record<string, number> {
   const out: Record<string, number> = {};
-  for (const [planId, suffix] of Object.entries(PLAN_ENV_KEYS)) {
+  for (const [planId, suffix] of Object.entries(ALL_PLAN_ENV_KEYS)) {
     const v = env[`CHAIN_PLAN_${suffix}`];
     if (v && /^\d+$/.test(v)) out[planId] = Number(v);
   }

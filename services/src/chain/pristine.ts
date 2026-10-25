@@ -28,15 +28,19 @@ export function comparePlanWithSeed(planId: string, status: ChainPlanStatus): { 
   return { pristine: true, reason: '' };
 }
 
-/** Reads every mapped chain plan and compares it with the seed; unreadable plans count as used. */
+/**
+ * Reads every mapped chain plan and compares it with the seed; unreadable plans count as used.
+ * `getStatus` also receives the demo plan id, so a caller with one contract instance per corridor
+ * can read each plan from the instance its corridor runs on.
+ */
 export async function checkChainPlans(
   chainPlans: Record<string, number>,
-  getStatus: (chainPlanId: number) => Promise<ChainPlanStatus>,
+  getStatus: (chainPlanId: number, planId: string) => Promise<ChainPlanStatus>,
 ): Promise<PristineCheck[]> {
   return Promise.all(
     Object.entries(chainPlans).map(async ([planId, chainPlanId]) => {
       try {
-        const r = comparePlanWithSeed(planId, await getStatus(chainPlanId));
+        const r = comparePlanWithSeed(planId, await getStatus(chainPlanId, planId));
         return { planId, chainPlanId, ...r };
       } catch (e) {
         return { planId, chainPlanId, pristine: false, reason: `not readable: ${e instanceof Error ? e.message : String(e)}` };

@@ -5,7 +5,7 @@
 
 import { Address, Asset, Keypair, Operation, hash, rpc, xdr } from '@stellar/stellar-sdk';
 import { FRIENDBOT_URL } from './env';
-import type { Submitter, TxResult } from './submit';
+import type { SimulatedFee, Submitter, TxResult } from './submit';
 
 export async function accountExists(submitter: Submitter, publicKey: string): Promise<boolean> {
   try {
@@ -86,14 +86,23 @@ export interface PaymentPlanConstructorArgs {
   payeeBackend: string;
 }
 
-/** Deploys a new payment_plan instance (random salt) and runs its constructor. */
-export async function deployPaymentPlan(submitter: Submitter, source: Keypair, wasmHash: Uint8Array, args: PaymentPlanConstructorArgs): Promise<{ contractId: string; tx: TxResult<string> }> {
+export function randomSalt(): Uint8Array {
   const salt = new Uint8Array(32);
   globalThis.crypto.getRandomValues(salt);
-  const op = Operation.createCustomContract({
-    address: new Address(source.publicKey()),
-    wasmHash,
-    salt,
+  return salt;
+}
+
+/**
+ * The `create_contract` host function for a new payment_plan instance from an already installed
+ * Wasm hash, with the constructor arguments `(admin, operator, usdc, payee_backend)` in the order
+ * `__constructor` declares them. Deploying from a hash never uploads code: the instance entry is
+ * the only new ledger entry, so this is what a second corridor instance costs.
+ */
+export function createPaymentPlanOp(deployer: string, wasmHash: Uint8Array, args: PaymentPlanConstructorArgs, salt: Uint8Array = randomSalt()): xdr.Operation {
+  return Operation.createCustomContract({
+    address: new Address(deployer),
+    wasmHash: Buffer.from(wasmHash),
+    salt: Buffer.from(salt),
     constructorArgs: [
       new Address(args.admin).toScVal(),
       new Address(args.operator).toScVal(),
@@ -101,12 +110,35 @@ export async function deployPaymentPlan(submitter: Submitter, source: Keypair, w
       new Address(args.payeeBackend).toScVal(),
     ],
   });
+}
+
+/** Simulates the deployment and reports its fee; nothing is sent. */
+export function simulateDeployFee(submitter: Submitter, deployer: string, wasmHash: Uint8Array, args: PaymentPlanConstructorArgs): Promise<SimulatedFee> {
+  return submitter.simulateFee('create_contract', deployer, createPaymentPlanOp(deployer, wasmHash, args));
+}
+
+/** Deploys a new payment_plan instance (random salt) and runs its constructor. */
+export async function deployPaymentPlan(submitter: Submitter, source: Keypair, wasmHash: Uint8Array, args: PaymentPlanConstructorArgs): Promise<{ contractId: string; tx: TxResult<string> }> {
+  const op = createPaymentPlanOp(source.publicKey(), wasmHash, args);
   const tx = await submitter.soroban<string>('create_contract', source, op);
   return { contractId: tx.result, tx };
 }
 
 export function hexOf(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Inverse of `hexOf`: 64 hex characters → the 32 bytes of a Wasm hash. */
+export function bytesOfHex(hex: string): Uint8Array {
+  if (!/^[0-9a-f]{64}$/i.test(hex)) throw new Error(`expected 64 hex characters, got ${hex.length}`);
+  return Uint8Array.from(hex.match(/../g)!.map((b) => parseInt(b, 16)));
+}
+
+/** Stroops → XLM with seven decimals, for fee reports. */
+export function stroopsToXlm(stroops: bigint): string {
+  const neg = stroops < 0n;
+  const abs = neg ? -stroops : stroops;
+  return `${neg ? '-' : ''}${abs / 10_000_000n}.${(abs % 10_000_000n).toString().padStart(7, '0')}`;
 }
 
 /** Hash of the Wasm a contract instance currently runs, or null when the instance is not found. */

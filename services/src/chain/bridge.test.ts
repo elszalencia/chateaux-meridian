@@ -154,8 +154,12 @@ describe('DemoApi over a fake ChainBridge', () => {
     await api.advanceClock(1);
     await api.pay(PLAN_MARIA, 3);
     const { state, elapsedMs } = await api.reset();
-    expect(bridge.calls.filter((c) => c.fn === 'seedPlan').map((c) => c.args[0])).toEqual([PLAN_MARIA, PLAN_ANDRES, PLAN_CAMILA]);
-    expect(state.chainPlans).toEqual({ [PLAN_MARIA]: 9001, [PLAN_ANDRES]: 9002, [PLAN_CAMILA]: 9003 });
+    // The Colombia plans are seeded on this (Colombia) bridge, in seed order; the El Salvador plans
+    // belong to the `chains.sv` bridge (see bridge.sv.test.ts) and are not asserted here.
+    const co = [PLAN_MARIA, PLAN_ANDRES, PLAN_CAMILA];
+    const seeded = bridge.calls.filter((c) => c.fn === 'seedPlan').map((c) => c.args[0] as string);
+    expect(seeded.filter((id) => co.includes(id))).toEqual(co);
+    for (const id of co) expect(state.chainPlans![id]).toBe(9000 + seeded.indexOf(id) + 1);
     expect(state.chainContractId).toBe('CFAKECONTRACT');
     expect(state.mode).toBe('testnet');
     expect(state.lastResetMs).toBe(elapsedMs);
@@ -166,7 +170,7 @@ describe('DemoApi over a fake ChainBridge', () => {
     await api.advanceClock(1);
     bridge.calls.length = 0;
     await api.pay(PLAN_MARIA, 3);
-    expect(bridge.calls[0]!.args).toEqual(['buyer-maria', 9001, 11_883_327_462n]);
+    expect(bridge.calls[0]!.args).toEqual(['buyer-maria', state.chainPlans![PLAN_MARIA], 11_883_327_462n]);
   });
 
   it('a chain failure surfaces as ApiError PROVIDER carrying the contract error name', async () => {

@@ -17,8 +17,15 @@
 // Seeding runs in four rounds; the calls inside a round are independent and go out in parallel on
 // different channel accounts: (1) create_plan and the test-USDC mint, (2) deposit, (3) every
 // apply_lock, (4) every release and break. Plans are seeded in parallel with each other too.
+//
+// Corridors. The bridge serves one contract instance; a plan's corridor (config/corridors.ts,
+// through corridorOf) decides how its rows are replayed. A corridor whose amount field holds cents
+// (decimals 2) releases every seeded installment with release_spot at exactly cents × 100,000
+// stroops, and a corridor with locks disabled never sees apply_lock: a seed that carries a lock for
+// such a plan is refused before anything is sent.
 
 import { hash } from '@stellar/stellar-sdk';
+import { LocksDisabledError, corridorOf, minorToStroops } from '../corridors/index';
 import type { Installment, Lock, Plan, Receipt } from '../domain/types';
 import { fixedPointRate, fixedPointUsdDue } from '../lock/engine';
 import type { ChainClient, ChainGovernance, ChainPlanStatus } from './client';
@@ -136,15 +143,18 @@ export class TestnetBridge implements ChainBridge {
     const base = seedBaseTs(this.now());
     const chainPlanId = randomPlanId();
     const buyerId = plan.buyerId;
+    const corridor = corridorOf(plan);
+    assertSeedHasNoLocks(plan, rows, seedState);
 
     // Stroops each seeded release needs: locked ones at the contract's floor division, spot ones
-    // at the receipt's two-decimal USD.
+    // at the receipt's two-decimal USD; a cents corridor releases exactly cents × 100,000.
     const need = new Map<number, bigint>();
     const lockOf = (row: Installment): Lock | undefined => seedState.locks.find((l) => l.id === row.lockId);
     for (const row of rows) {
       if (row.status !== 'released') continue;
       const lock = lockOf(row);
-      if (lock && row.lockedRate != null) need.set(row.idx, lockedStroops(row.copDue, lock.lockedRate));
+      if (corridor.decimals === 2) need.set(row.idx, minorToStroops(row.copDue, corridor));
+      else if (lock && row.lockedRate != null) need.set(row.idx, lockedStroops(row.copDue, lock.lockedRate));
       else need.set(row.idx, usdToStroops(row.usdDue ?? 0));
     }
     const total = [...need.values()].reduce((a, b) => a + b, 0n);
@@ -262,6 +272,24 @@ export class TestnetBridge implements ChainBridge {
     const r = await this.client.extendTtl(chainPlanId);
     return { txHash: r.txHash, ledger: r.ledger };
   }
+}
+
+/**
+ * A corridor with `locksEnabled` false must never reach `apply_lock`: a seed that carries a lock,
+ * a locked or broken row, or a locked rate for such a plan is a data error and is refused here,
+ * before any transaction is built (the services refuse the live paths the same way).
+ */
+export function assertSeedHasNoLocks(plan: Plan, rows: Installment[], seedState: SeedPlanState): void {
+  const corridor = corridorOf(plan);
+  if (corridor.locksEnabled) return;
+  const lockRows = rows.filter((r) => r.lockId != null || r.lockedRate != null || r.status === 'locked' || r.status === 'broken');
+  const locks = seedState.locks.filter((l) => l.planId === plan.id);
+  if (lockRows.length === 0 && locks.length === 0) return;
+  const err = new LocksDisabledError(corridor.id);
+  throw new ChainError(
+    `seed ${plan.id}: ${err.message}; ${locks.length} lock(s) and ${lockRows.length} locked row(s) in the seed would call apply_lock`,
+    { errorName: err.code, cause: err },
+  );
 }
 
 /** Seed step labels sorted the way the rounds run, so logs read in a stable order. */

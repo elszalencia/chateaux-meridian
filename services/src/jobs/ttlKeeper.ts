@@ -32,13 +32,18 @@ export async function planLiveUntil(server: rpc.Server, contractId: string, chai
   }
 }
 
+/**
+ * Dependencies of the keeper. Every per-plan call also receives the demo plan id, so a server with
+ * one contract instance per corridor can route the read or the extension to the instance the
+ * plan's corridor runs on; callers with a single instance ignore the second argument.
+ */
 export interface TtlKeeperDeps {
-  /** Demo plan id → chain plan id of the plans to keep alive. */
+  /** Demo plan id → chain plan id of the plans to keep alive (every instance). */
   chainPlans: () => Promise<Record<string, number>>;
   latestLedger: () => Promise<number>;
-  liveUntil: (chainPlanId: number) => Promise<number | null>;
-  getStatus: (chainPlanId: number) => Promise<ChainPlanStatus>;
-  extendTtl: (chainPlanId: number) => Promise<{ txHash: string }>;
+  liveUntil: (chainPlanId: number, planId: string) => Promise<number | null>;
+  getStatus: (chainPlanId: number, planId: string) => Promise<ChainPlanStatus>;
+  extendTtl: (chainPlanId: number, planId: string) => Promise<{ txHash: string }>;
   warnDays?: number;
 }
 
@@ -61,13 +66,13 @@ export async function runTtlKeeper(deps: TtlKeeperDeps, log: (msg: string) => vo
   const warnings: string[] = [];
   for (const [planId, chainPlanId] of plans) {
     const latest = await deps.latestLedger();
-    const before = await deps.liveUntil(chainPlanId);
+    const before = await deps.liveUntil(chainPlanId, planId);
     const daysBefore = before == null ? null : Math.round(ledgersToDays(before - latest) * 10) / 10;
     if (daysBefore == null) warnings.push(`${planId} (#${chainPlanId}): plan entry not found or archived; it must be restored before it can be extended`);
     else if (daysBefore < warnDays) warnings.push(`${planId} (#${chainPlanId}): only ${daysBefore} days of TTL left`);
     let status: ChainPlanStatus | null = null;
     try {
-      status = await deps.getStatus(chainPlanId);
+      status = await deps.getStatus(chainPlanId, planId);
     } catch (e) {
       reports.push({ planId, chainPlanId, daysBefore, daysAfter: null, extended: false, txHash: null, note: `unreadable: ${e instanceof Error ? e.message : String(e)}` });
       continue;
@@ -78,8 +83,8 @@ export async function runTtlKeeper(deps: TtlKeeperDeps, log: (msg: string) => vo
       reports.push({ planId, chainPlanId, daysBefore, daysAfter: daysBefore, extended: false, txHash: null, note: closed ? `plan ${status.governance.state}` : 'nothing left to pay' });
       continue;
     }
-    const tx = await deps.extendTtl(chainPlanId);
-    const after = await deps.liveUntil(chainPlanId);
+    const tx = await deps.extendTtl(chainPlanId, planId);
+    const after = await deps.liveUntil(chainPlanId, planId);
     const daysAfter = after == null ? null : Math.round(ledgersToDays(after - (await deps.latestLedger())) * 10) / 10;
     reports.push({ planId, chainPlanId, daysBefore, daysAfter, extended: true, txHash: tx.txHash, note: `${open} installment(s) to pay` });
     log(`${planId} #${chainPlanId}: ${daysBefore ?? '?'} → ${daysAfter ?? '?'} days (${tx.txHash})`);

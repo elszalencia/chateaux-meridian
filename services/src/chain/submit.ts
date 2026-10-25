@@ -87,6 +87,19 @@ export interface TxResult<T = unknown> {
   ledger: number;
   /** Return value decoded with `scValToNative` (void → undefined). */
   result: T;
+  /** Fee the network actually charged, in stroops (`TransactionResult.feeCharged`). */
+  feeCharged?: bigint;
+}
+
+/** What a simulation says a Soroban operation would cost, before anything is sent. */
+export interface SimulatedFee {
+  /** Resource fee the RPC asks for, in stroops (the inclusion fee comes on top). */
+  minResourceFee: bigint;
+  /** Resource fee plus the base inclusion fee: the fee the assembled transaction would declare. */
+  totalFee: bigint;
+  latestLedger: number;
+  /** False when the fee exceeds what the uint32 fee field of one transaction can carry. */
+  fits: boolean;
 }
 
 export interface SubmitterOptions {
@@ -155,6 +168,16 @@ export class Submitter {
     if (rpc.Api.isSimulationError(sim)) throw ChainError.fromSimulation(label, sim.error);
     const retval = sim.result?.retval;
     return (retval ? scValToNative(retval) : undefined) as T;
+  }
+
+  /** Simulates a Soroban operation and reports the fee it would need. Nothing is sent. */
+  async simulateFee(label: string, sourcePublic: string, op: xdr.Operation): Promise<SimulatedFee> {
+    const tx = await this.build(sourcePublic, [op]);
+    const sim = await this.server.simulateTransaction(tx);
+    if (rpc.Api.isSimulationError(sim)) throw ChainError.fromSimulation(label, sim.error);
+    const minResourceFee = BigInt(sim.minResourceFee ?? '0');
+    const totalFee = minResourceFee + BigInt(tx.fee);
+    return { minResourceFee, totalFee, latestLedger: sim.latestLedger, fits: totalFee <= MAX_TX_FEE };
   }
 
   /**
@@ -268,7 +291,9 @@ export class Submitter {
   private finish<T>(label: string, hash: string, got: rpc.Api.GetTransactionResponse): TxResult<T> {
     if (got.status === rpc.Api.GetTransactionStatus.SUCCESS) {
       const retval = got.returnValue;
-      return { txHash: hash, ledger: got.ledger, result: (retval ? scValToNative(retval) : undefined) as T };
+      // In @stellar/stellar-sdk 17.2.1 XDR struct fields are plain readonly properties (feeCharged is a bigint).
+      const feeCharged = BigInt(got.resultXdr.feeCharged);
+      return { txHash: hash, ledger: got.ledger, result: (retval ? scValToNative(retval) : undefined) as T, feeCharged };
     }
     if (got.status === rpc.Api.GetTransactionStatus.FAILED) {
       const code = got.resultXdr.result.type;
