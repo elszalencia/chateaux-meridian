@@ -4,7 +4,7 @@
 // is not part of any product screen.
 
 import { useState } from 'react';
-import { PLAN_MARIA } from '@casa-puente/services';
+import { CORRIDOR_IDS, DEFAULT_PLAN_BY_CORRIDOR } from '@casa-puente/services';
 import { useDemo } from '../app/demo';
 import { useFormat } from '../app/format';
 import { useAsync } from '../app/hooks';
@@ -15,7 +15,7 @@ import { api, DEMO_MODE } from '../app/api';
 
 function BuyerPicker() {
   const t = useT();
-  const { version } = useDemo();
+  const { version, corridor } = useDemo();
   const [planId, selectPlan] = useBuyerPlan();
   const plans = useAsync(() => api.listPlans(), [version]);
   return (
@@ -25,7 +25,7 @@ function BuyerPicker() {
         data-testid="demo-buyer"
         aria-label={t('demo.viewAs')}
         className="min-h-9 rounded-md border border-ink-300 bg-white px-2 text-sm text-ink-900"
-        value={planId ?? PLAN_MARIA}
+        value={planId ?? DEFAULT_PLAN_BY_CORRIDOR[corridor]}
         onChange={(e) => selectPlan(e.target.value)}
       >
         {(plans.data ?? []).map(({ plan, buyer }) => (
@@ -49,6 +49,22 @@ export function DemoBar() {
     <div role="region" aria-label={t('demo.bar')} data-testid="demo-bar" className="border-b border-warn-500/40 bg-warn-100/60">
       <div className="mx-auto flex max-w-[1360px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 text-sm">
         <span className="font-semibold text-warn-700">{t('demo.mode', { mode: DEMO_MODE })}</span>
+        <label className="flex items-center gap-2 text-ink-700" title={t('demo.corridorHint')}>
+          {t('demo.corridor')}
+          <select
+            data-testid="demo-corridor"
+            aria-label={t('demo.corridor')}
+            className="min-h-9 rounded-md border border-ink-300 bg-white px-2 text-sm text-ink-900"
+            value={demo.corridor}
+            onChange={(e) => demo.setCorridor(e.target.value as typeof demo.corridor)}
+          >
+            {CORRIDOR_IDS.map((c) => (
+              <option key={c} value={c}>
+                {t(`corridors.${c}.name`)}
+              </option>
+            ))}
+          </select>
+        </label>
         <span className="text-ink-700">
           {t('demo.today')}: <strong data-testid="demo-today" className="tabular">{demo.state ? f.date(demo.state.today) : '…'}</strong>
         </span>

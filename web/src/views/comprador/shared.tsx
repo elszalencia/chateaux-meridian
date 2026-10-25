@@ -35,6 +35,7 @@ export const CELL_TONE: Record<CellState, Tone> = {
   roto: 'warn',
   no_pagado: 'warn',
   condonado: 'neutral',
+  recibido: 'info',
 };
 
 /** Classes for a calendar cell (and the legend swatch) per state. */
@@ -46,6 +47,7 @@ export const CELL_CLASS: Record<CellState, string> = {
   roto: 'border border-warn-500 bg-warn-100 text-warn-700',
   no_pagado: 'border-2 border-warn-700 bg-warn-100 text-warn-700',
   condonado: 'border border-dashed border-ink-300 bg-ink-100 text-ink-700',
+  recibido: 'border border-sky-300 bg-sky-50 text-sky-800',
 };
 
 const TX_REF_FIELD = ['tx', 'Ha', 'sh'].join('') as keyof Receipt;

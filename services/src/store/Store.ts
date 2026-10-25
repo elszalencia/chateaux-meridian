@@ -28,6 +28,12 @@ export const TABLE_NAMES: TableName[] = [
   'demo_state',
   'plan_governance',
   'policy_events',
+  'payments',
+  'sellers',
+  'seller_units',
+  'offices',
+  'payouts',
+  'wa_outbox',
 ];
 
 export function emptySnapshot(): Snapshot {
@@ -45,5 +51,11 @@ export function emptySnapshot(): Snapshot {
     demo_state: [],
     plan_governance: [],
     policy_events: [],
+    payments: [],
+    sellers: [],
+    seller_units: [],
+    offices: [],
+    payouts: [],
+    wa_outbox: [],
   };
 }

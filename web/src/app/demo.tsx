@@ -2,14 +2,29 @@
 // its load dependencies, so one click on the demo bar refreshes all three views.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { DemoState } from '@casa-puente/services';
+import type { CorridorId, DemoState } from '@casa-puente/services';
 import { api, clearPersistedDemo } from './api';
+
+// Presenter corridor: picks which office views the nav lists and which buyer opens by default.
+// Presentation chrome only; every product screen takes its corridor from the plan it shows.
+const CORRIDOR_KEY = 'chateaux-demo-corridor';
+
+function readCorridor(): CorridorId {
+  try {
+    return window.localStorage.getItem(CORRIDOR_KEY) === 'sv' ? 'sv' : 'co';
+  } catch {
+    return 'co';
+  }
+}
 
 interface DemoValue {
   state: DemoState | null;
   version: number;
   busy: boolean;
   lastResetMs: number | null;
+  /** Presenter corridor (demo bar switch). */
+  corridor: CorridorId;
+  setCorridor: (c: CorridorId) => void;
   refresh: () => Promise<void>;
   advanceMonth: () => Promise<void>;
   reset: () => Promise<number>;
@@ -24,6 +39,15 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const [version, setVersion] = useState(0);
   const [busy, setBusy] = useState(false);
   const [lastResetMs, setLastResetMs] = useState<number | null>(null);
+  const [corridor, setCorridorState] = useState<CorridorId>(readCorridor);
+  const setCorridor = useCallback((c: CorridorId) => {
+    setCorridorState(c);
+    try {
+      window.localStorage.setItem(CORRIDOR_KEY, c);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
     setState(await api.getDemoState());
@@ -71,8 +95,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<DemoValue>(
-    () => ({ state, version, busy, lastResetMs, refresh, advanceMonth, reset, setErrorMode, setPassThrough }),
-    [state, version, busy, lastResetMs, refresh, advanceMonth, reset, setErrorMode, setPassThrough],
+    () => ({ state, version, busy, lastResetMs, corridor, setCorridor, refresh, advanceMonth, reset, setErrorMode, setPassThrough }),
+    [state, version, busy, lastResetMs, corridor, setCorridor, refresh, advanceMonth, reset, setErrorMode, setPassThrough],
   );
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
 }

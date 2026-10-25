@@ -11,7 +11,9 @@ import { Card } from '../../components/ui';
 import { CELL_CLASS, CheckIcon } from './shared';
 
 const STATES = ['pagado', 'bloqueado', 'ofrecido', 'abierto', 'roto'] as const;
-const ADVERSE_STATES = ['no_pagado', 'condonado'] as const;
+// States that join the legend only when the plan has one: the adverse ones and "recibido" (paid
+// ahead of the due date, released on that date), which only El Salvador plans produce.
+const ADVERSE_STATES = ['no_pagado', 'condonado', 'recibido'] as const;
 // The muted date grey only passes contrast on white cells; tinted cells keep their own text colour.
 const DATE_CLASS: Partial<Record<InstallmentView['cellState'], string>> = { bloqueado: 'text-white', abierto: 'text-ink-500', ofrecido: 'text-ink-500' };
 

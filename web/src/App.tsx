@@ -3,18 +3,25 @@
 // itself; views load what they need through the API and refresh on the demo `version`.
 
 import { Suspense, lazy } from 'react';
+import { CORRIDORS } from '@casa-puente/services';
+import { useDemo } from './app/demo';
 import { useI18n } from './app/i18n';
 import { useRoute, VIEWS } from './app/router';
 import { DemoBar } from './components/DemoBar';
 import { Spinner } from './components/ui';
 
 const Comprador = lazy(() => import('./views/comprador/CompradorView'));
+const Oficina = lazy(() => import('./portals/oficina/OficinaView'));
 const Constructora = lazy(() => import('./views/constructora/ConstructoraView'));
 const Tesoreria = lazy(() => import('./views/tesoreria/TesoreriaView'));
 
 export default function App() {
   const { t, lang, setLang } = useI18n();
   const [view, navigate] = useRoute();
+  const { corridor } = useDemo();
+  // The nav lists the views the presenter corridor has (config/corridors.ts `views`); a view reached
+  // by URL still renders, since the corridor of what it shows comes from the plan, not from here.
+  const navViews = VIEWS.filter((v) => CORRIDORS[corridor].views[v]);
 
   return (
     <div className="min-h-screen">
@@ -36,7 +43,7 @@ export default function App() {
             </span>
           </div>
           <nav aria-label={t('app.viewSwitcher')} className="order-3 flex w-full gap-1 overflow-x-auto rounded-lg bg-ink-100 p-1 sm:order-none sm:ml-auto sm:w-auto">
-            {VIEWS.map((v) => (
+            {navViews.map((v) => (
               <button
                 key={v}
                 type="button"
@@ -74,6 +81,7 @@ export default function App() {
       <main id="main" className="mx-auto max-w-[1360px] px-4 py-6">
         <Suspense fallback={<Spinner />}>
           {view === 'comprador' && <Comprador />}
+          {view === 'oficina' && <Oficina />}
           {view === 'constructora' && <Constructora />}
           {view === 'tesoreria' && <Tesoreria />}
         </Suspense>

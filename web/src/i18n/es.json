@@ -10,7 +10,8 @@
     "views": {
       "comprador": "Comprador",
       "constructora": "Constructora / Fiducia",
-      "tesoreria": "Tesorería"
+      "tesoreria": "Tesorería",
+      "oficina": "Oficina"
     },
     "viewSwitcher": "Cambiar de vista",
     "language": "Idioma",
@@ -30,7 +31,9 @@
     "mode": "Modo: {mode}",
     "working": "Aplicando…",
     "viewAs": "Ver como",
-    "viewAsHint": "Elige qué comprador muestra la vista Comprador"
+    "viewAsHint": "Elige qué comprador muestra la vista Comprador",
+    "corridor": "Corredor",
+    "corridorHint": "Corredor que presenta la demo: decide qué vistas de oficina aparecen y qué comprador se abre por defecto"
   },
   "common": {
     "loading": "Cargando…",
@@ -92,7 +95,8 @@
       "on_hold": "En pausa",
       "cancelled": "Cancelado",
       "completed": "Completado"
-    }
+    },
+    "recibido": "Recibido"
   },
   "errors": {
     "unknown": "Ocurrió un error inesperado. Intenta de nuevo.",
@@ -155,7 +159,8 @@
       "legendAbierto": "Abierta (tasa del día)",
       "legendRoto": "Aseguramiento roto",
       "legendNo_pagado": "No pagada (habla con tu asesor)",
-      "legendCondonado": "Condonada por la constructora"
+      "legendCondonado": "Condonada por la constructora",
+      "legendRecibido": "Recibida (se entrega al vendedor en la fecha de la cuota)"
     },
     "card": {
       "title": "Cuota {n}",
@@ -580,5 +585,31 @@
     "holdCleared": "Revisión terminada",
     "refund": "Devolución al comprador",
     "planCompleted": "Plan completado"
+  },
+  "corridors": {
+    "co": {
+      "name": "Colombia",
+      "payoutTarget": "Encargo Fidudavivienda"
+    },
+    "sv": {
+      "name": "El Salvador",
+      "payoutTarget": "Cuenta del vendedor"
+    }
+  },
+  "oficina": {
+    "title": "Oficina",
+    "surfaceToggle": "Cambiar de superficie",
+    "surfaces": {
+      "mostrador": "Mostrador",
+      "escritorio": "Escritorio"
+    },
+    "mostrador": {
+      "title": "Mostrador",
+      "placeholder": "La caja estará disponible en breve."
+    },
+    "escritorio": {
+      "title": "Escritorio",
+      "placeholder": "El escritorio estará disponible en breve."
+    }
   }
 }

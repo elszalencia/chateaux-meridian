@@ -30,7 +30,10 @@ import type {
   Unit,
   UnitSummary,
   CurvePoint,
+  Payment,
+  SellerSummary,
 } from '../domain/types';
+import { corridorIdOf } from '../corridors/index';
 import { compareISO, diffDays, quarterKey, yearOf } from '../domain/dates';
 import { GRACE_BUSINESS_DAYS, businessDaysLate, graceEndDate, isBeyondGrace, roundCop, roundUsd, usdDue } from '../lock/engine';
 import { defaultGovernance, fundsAllowed } from '../policy/transitions';
@@ -176,6 +179,8 @@ export function buildPlanView(args: {
   passThrough: number;
   governance?: PlanGovernance;
   events?: PolicyEvent[];
+  seller?: SellerSummary | null;
+  payments?: Payment[];
 }): PlanView {
   const governance = governanceView({ planId: args.plan.id, gov: args.governance, installments: args.installments, events: args.events, today: args.today });
   const rows = args.installments
@@ -197,6 +202,9 @@ export function buildPlanView(args: {
     spot: args.spot,
     passThrough: args.passThrough,
     governance,
+    corridor: corridorIdOf(args.plan),
+    seller: args.seller ?? null,
+    payments: (args.payments ?? []).filter((p) => p.planId === args.plan.id),
   };
 }
 

@@ -10,7 +10,8 @@
     "views": {
       "comprador": "Buyer",
       "constructora": "Builder / Trust",
-      "tesoreria": "Treasury"
+      "tesoreria": "Treasury",
+      "oficina": "Office"
     },
     "viewSwitcher": "Switch view",
     "language": "Language",
@@ -30,7 +31,9 @@
     "mode": "Mode: {mode}",
     "working": "Applying…",
     "viewAs": "View as",
-    "viewAsHint": "Choose which buyer the Buyer view shows"
+    "viewAsHint": "Choose which buyer the Buyer view shows",
+    "corridor": "Corridor",
+    "corridorHint": "Corridor the demo presents: decides which office views appear and which buyer opens by default"
   },
   "common": {
     "loading": "Loading…",
@@ -92,7 +95,8 @@
       "on_hold": "On hold",
       "cancelled": "Cancelled",
       "completed": "Completed"
-    }
+    },
+    "recibido": "Received"
   },
   "errors": {
     "unknown": "An unexpected error occurred. Please try again.",
@@ -155,7 +159,8 @@
       "legendAbierto": "Open (today's rate)",
       "legendRoto": "Securing broken",
       "legendNo_pagado": "Unpaid (talk to your advisor)",
-      "legendCondonado": "Waived by the builder"
+      "legendCondonado": "Waived by the builder",
+      "legendRecibido": "Received (delivered to the seller on the due date)"
     },
     "card": {
       "title": "Installment {n}",
@@ -580,5 +585,31 @@
     "holdCleared": "Review finished",
     "refund": "Refund to the buyer",
     "planCompleted": "Plan completed"
+  },
+  "corridors": {
+    "co": {
+      "name": "Colombia",
+      "payoutTarget": "Fidudavivienda escrow"
+    },
+    "sv": {
+      "name": "El Salvador",
+      "payoutTarget": "Seller's account"
+    }
+  },
+  "oficina": {
+    "title": "Office",
+    "surfaceToggle": "Switch surface",
+    "surfaces": {
+      "mostrador": "Counter",
+      "escritorio": "Desk"
+    },
+    "mostrador": {
+      "title": "Counter",
+      "placeholder": "The counter will be available shortly."
+    },
+    "escritorio": {
+      "title": "Desk",
+      "placeholder": "The desk will be available shortly."
+    }
   }
 }

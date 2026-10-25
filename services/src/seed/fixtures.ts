@@ -54,6 +54,13 @@ export const PLAN_LUIS = 'plan-luis';
 export const PLAN_PAOLA = 'plan-paola';
 export const PLAN_JORGE = 'plan-jorge';
 export const PLAN_NATALIA = 'plan-natalia';
+// El Salvador corridor (data filled by the seed; ids fixed here so the shell and the tests agree)
+export const PLAN_ROXANA = 'plan-roxana';
+export const PLAN_MARVIN = 'plan-marvin';
+export const PLAN_DORIS = 'plan-doris';
+export const PLAN_OSCAR = 'plan-oscar';
+/** The buyer the Comprador view opens when the route names none, per presenter corridor. */
+export const DEFAULT_PLAN_BY_CORRIDOR: Readonly<Record<'co' | 'sv', string>> = { co: PLAN_MARIA, sv: PLAN_ROXANA };
 /** Plans that exist only to demo adverse states; the testnet reset does not seed them on chain. */
 export const ADVERSE_DEMO_PLANS: readonly string[] = [PLAN_LUIS, PLAN_PAOLA, PLAN_JORGE, PLAN_NATALIA];
 
@@ -785,5 +792,11 @@ export function buildSeed(): Snapshot {
     demo_state: [demoState],
     plan_governance: [...governance.values()],
     policy_events: events,
+    payments: [],
+    sellers: [],
+    seller_units: [],
+    offices: [],
+    payouts: [],
+    wa_outbox: [],
   };
 }

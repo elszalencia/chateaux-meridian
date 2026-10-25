@@ -2,6 +2,7 @@
 export * from './domain/types';
 export * from './domain/dates';
 export * from './domain/holidays';
+export * from './corridors/index';
 export * from './lock/engine';
 export * from './adapters/interfaces';
 export { MockRuntime, MockProviderError, spotAtOffset, curveAtOffset, mockTxHash, CURVE_AS_OF, CURVE_SOURCE, BASE_SPOT, BASE_FORWARDS } from './adapters/mockRuntime';
@@ -22,6 +23,11 @@ export {
   PLAN_PAOLA,
   PLAN_JORGE,
   PLAN_NATALIA,
+  PLAN_ROXANA,
+  PLAN_MARVIN,
+  PLAN_DORIS,
+  PLAN_OSCAR,
+  DEFAULT_PLAN_BY_CORRIDOR,
   ADVERSE_DEMO_PLANS,
   TRUST_COMPANY,
 } from './seed/fixtures';

@@ -36,9 +36,30 @@ export const API_METHODS = [
   'advanceClock',
   'reset',
   'setErrorMode',
+  'listOffices',
+  'getPayOptions',
+  'requestCashReference',
+  'renewCashReference',
+  'completeCashReference',
+  'getPayment',
+  'listPayments',
+  'searchBuyers',
+  'takeCounterPayment',
+  'getShiftTotal',
+  'sendReceiptMessage',
+  'listPlanRows',
+  'listSellers',
+  'getSeller',
+  'setSellerVerification',
+  'changeSellerPayoutAccount',
+  'raiseCnrAlert',
+  'listPayouts',
+  'retryPayout',
+  'listOutbox',
+  'runAdverseAction',
 ] as const satisfies readonly (keyof CasaPuenteApi)[];
 
-const STREAMING = new Set<string>(['pay', 'payAhead']);
+const STREAMING = new Set<string>(['pay', 'payAhead', 'completeCashReference', 'takeCounterPayment']);
 const MAX_BODY = 1_000_000;
 
 const json = (v: unknown) => JSON.stringify(v, (_k, x) => (typeof x === 'bigint' ? x.toString() : x));
@@ -75,6 +96,10 @@ async function callApi(svc: TestnetService, method: string, args: unknown[], onP
       return svc.pay(String(args[0]), Number(args[1]), onProgress);
     case 'payAhead':
       return svc.payAhead(String(args[0]), onProgress);
+    case 'completeCashReference':
+      return svc.api.completeCashReference(String(args[0]), onProgress);
+    case 'takeCounterPayment':
+      return svc.api.takeCounterPayment(args[0] as Parameters<CasaPuenteApi['takeCounterPayment']>[0], onProgress);
     case 'getReceipts':
       return svc.getReceipts(String(args[0]));
     case 'reset':

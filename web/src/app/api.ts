@@ -45,6 +45,11 @@ function shouldResetFromUrl(): boolean {
 
 if (shouldResetFromUrl()) {
   localPersistence.clear();
+  try {
+    window.localStorage.removeItem('chateaux-demo-corridor');
+  } catch {
+    // ignore
+  }
   window.history.replaceState({}, '', window.location.pathname + window.location.hash);
 }
 
@@ -114,6 +119,27 @@ export class HttpApi implements CasaPuenteApi {
   advanceClock: CasaPuenteApi['advanceClock'] = (months) => this.call('advanceClock', months);
   reset: CasaPuenteApi['reset'] = () => this.call('reset');
   setErrorMode: CasaPuenteApi['setErrorMode'] = (on) => this.call('setErrorMode', on);
+  listOffices: CasaPuenteApi['listOffices'] = () => this.call('listOffices');
+  getPayOptions: CasaPuenteApi['getPayOptions'] = (planId, idx) => this.call('getPayOptions', planId, idx);
+  requestCashReference: CasaPuenteApi['requestCashReference'] = (planId, idx) => this.call('requestCashReference', planId, idx);
+  renewCashReference: CasaPuenteApi['renewCashReference'] = (paymentId) => this.call('renewCashReference', paymentId);
+  completeCashReference: CasaPuenteApi['completeCashReference'] = (paymentId, onProgress) => this.stream('completeCashReference', onProgress, paymentId);
+  getPayment: CasaPuenteApi['getPayment'] = (paymentId) => this.call('getPayment', paymentId);
+  listPayments: CasaPuenteApi['listPayments'] = (filter) => this.call('listPayments', filter);
+  searchBuyers: CasaPuenteApi['searchBuyers'] = (query) => this.call('searchBuyers', query);
+  takeCounterPayment: CasaPuenteApi['takeCounterPayment'] = (args, onProgress) => this.stream('takeCounterPayment', onProgress, args);
+  getShiftTotal: CasaPuenteApi['getShiftTotal'] = (args) => this.call('getShiftTotal', args);
+  sendReceiptMessage: CasaPuenteApi['sendReceiptMessage'] = (planId, idx) => this.call('sendReceiptMessage', planId, idx);
+  listPlanRows: CasaPuenteApi['listPlanRows'] = () => this.call('listPlanRows');
+  listSellers: CasaPuenteApi['listSellers'] = () => this.call('listSellers');
+  getSeller: CasaPuenteApi['getSeller'] = (sellerId) => this.call('getSeller', sellerId);
+  setSellerVerification: CasaPuenteApi['setSellerVerification'] = (sellerId, status, note) => this.call('setSellerVerification', sellerId, status, note);
+  changeSellerPayoutAccount: CasaPuenteApi['changeSellerPayoutAccount'] = (sellerId, account) => this.call('changeSellerPayoutAccount', sellerId, account);
+  raiseCnrAlert: CasaPuenteApi['raiseCnrAlert'] = (sellerId, unitId, detail) => this.call('raiseCnrAlert', sellerId, unitId, detail);
+  listPayouts: CasaPuenteApi['listPayouts'] = (filter) => this.call('listPayouts', filter);
+  retryPayout: CasaPuenteApi['retryPayout'] = (payoutId) => this.call('retryPayout', payoutId);
+  listOutbox: CasaPuenteApi['listOutbox'] = (planId) => this.call('listOutbox', planId);
+  runAdverseAction: CasaPuenteApi['runAdverseAction'] = (action, detail) => this.call('runAdverseAction', action, detail);
 }
 
 function buildApi(): CasaPuenteApi {

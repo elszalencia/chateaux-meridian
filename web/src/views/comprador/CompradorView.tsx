@@ -5,7 +5,7 @@
 // modal flows (installment card, lock, pay, pay ahead) are owned here so each can trigger a reload.
 
 import { useCallback, useEffect, useState } from 'react';
-import { PLAN_MARIA, type LockQuote, type Tenor } from '@casa-puente/services';
+import { DEFAULT_PLAN_BY_CORRIDOR, type LockQuote, type Tenor } from '@casa-puente/services';
 import { api } from '../../app/api';
 import { useDemo } from '../../app/demo';
 import { useAsync } from '../../app/hooks';
@@ -25,8 +25,8 @@ type Flow = { kind: 'none' } | { kind: 'cell'; idx: number } | { kind: 'lock'; t
 
 export default function CompradorView() {
   const t = useT();
-  const { version } = useDemo();
-  const planId = useBuyerPlan()[0] ?? PLAN_MARIA;
+  const { version, corridor } = useDemo();
+  const planId = useBuyerPlan()[0] ?? DEFAULT_PLAN_BY_CORRIDOR[corridor];
   const plan = useAsync(() => api.getPlan(planId), [version, planId]);
   const receipts = useAsync(() => api.getReceipts(planId), [version, planId]);
   const [flow, setFlow] = useState<Flow>({ kind: 'none' });

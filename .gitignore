@@ -31,3 +31,4 @@ contracts/**/test_snapshots/
 
 # local reference material from the source project
 _reference/
+?ABLE_BRIEF_ES_PORTAL.md

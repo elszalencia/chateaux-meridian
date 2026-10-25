@@ -5,6 +5,7 @@
 
 import type {
   Buyer,
+  CounterSearchResult,
   DemoState,
   HedgeBookView,
   HedgeLeg,
@@ -13,16 +14,28 @@ import type {
   ISODate,
   Lock,
   LockQuote,
+  Office,
+  OutboxMessage,
+  PayOptionsView,
+  Payment,
+  PayoutAccount,
+  PayoutView,
   PayStep,
   Plan,
+  PlanRow,
   PlanView,
   Receipt,
   ReconRow,
   RenewalOffer,
+  SellerView,
+  ShiftTotal,
+  Tender,
   Tenor,
   Unit,
   UnitSummary,
 } from '../domain/types';
+import type { AdverseAction } from '../policy/transitions';
+import { corridorIdOf, type CorridorId } from '../corridors/index';
 import { addMonths, compareISO, nowISO } from '../domain/dates';
 import {
   GRACE_BUSINESS_DAYS,
@@ -60,7 +73,24 @@ export type ApiErrorCode =
   | 'NOTHING_TO_PAY_AHEAD'
   | 'PLAN_BLOCKED'
   | 'INSTALLMENT_MISSED'
-  | 'PROVIDER';
+  | 'PROVIDER'
+  // El Salvador corridor
+  | 'LOCKS_DISABLED' // quoteLock/acceptLock on a corridor with locks_enabled = false
+  | 'METHOD_NOT_OFFERED' // pay method not in the corridor's list or hidden for this buyer
+  | 'ABOVE_LIMIT' // MoneyGram cash-in above the network cap
+  | 'BELOW_LIMIT'
+  | 'STATE_EXCLUDED' // MoneyGram not offered in the buyer's state
+  | 'REFERENCE_EXPIRED' // MoneyGram reference past its expiry
+  | 'REFERENCE_NOT_COMPLETED' // the network has not reported the cash-in yet
+  | 'NOT_DUE_YET' // outside the pay window
+  | 'INSUFFICIENT_CASH' // counter: amount received below the amount due
+  | 'SELLER_UNVERIFIED'
+  | 'SELLER_PAUSED'
+  | 'SELLER_REJECTED'
+  | 'SELLER_COOLING_OFF'
+  | 'CNR_ALERT'
+  | 'INVALID_TRANSITION' // adverse action refused by the contract rules
+  | 'NOT_IMPLEMENTED';
 
 export class ApiError extends Error {
   constructor(public readonly code: ApiErrorCode, message?: string, public readonly cause?: unknown) {
@@ -90,6 +120,50 @@ export interface CasaPuenteApi {
   advanceClock(months?: number): Promise<DemoState>;
   reset(): Promise<{ state: DemoState; elapsedMs: number }>;
   setErrorMode(on: boolean): Promise<DemoState>;
+
+  // ---------- El Salvador corridor and the office portals ----------
+  // Every method below reads the plan's corridor through corridorOf(plan) and refuses what that
+  // corridor does not offer with a typed ApiError (never a country literal in the UI).
+
+  /** Offices and licensed agencies (the counter picks one; the buyer sees the nearest). */
+  listOffices(): Promise<Office[]>;
+  /** The pay methods offered to this buyer for one installment, with fees, limits and any open reference. */
+  getPayOptions(planId: string, idx: number): Promise<PayOptionsView>;
+  /** Issues a MoneyGram cash-in reference (status `pending`); the plan is not credited yet. */
+  requestCashReference(planId: string, idx: number): Promise<Payment>;
+  /** Replaces an expired reference with a new one. */
+  renewCashReference(paymentId: string): Promise<Payment>;
+  /** Demo control (simulado): the network reports the cash-in as completed, which credits the plan. */
+  completeCashReference(paymentId: string, onProgress?: ProgressFn): Promise<Receipt>;
+  getPayment(paymentId: string): Promise<Payment>;
+  listPayments(filter?: { planId?: string; officeId?: string; cashierId?: string; date?: ISODate; status?: Payment['status'] }): Promise<Payment[]>;
+
+  /** Counter: finds buyers by phone digits or name. Empty query → empty list. */
+  searchBuyers(query: string): Promise<CounterSearchResult[]>;
+  /** Counter: takes cash or card for one installment, credits the plan and writes the receipt. */
+  takeCounterPayment(args: { planId: string; idx: number; tender: Tender; amountReceived: number; officeId: string; cashierId: string }, onProgress?: ProgressFn): Promise<{ payment: Payment; receipt: Receipt }>;
+  /** Counter: today's takings by tender for one cashier at one office. */
+  getShiftTotal(args: { officeId: string; cashierId: string }): Promise<ShiftTotal>;
+  /** Sends the receipt link through the message channel (mock outbox). */
+  sendReceiptMessage(planId: string, idx: number): Promise<OutboxMessage>;
+
+  /** Desk: every plan with its desk status, filterable client-side. */
+  listPlanRows(): Promise<PlanRow[]>;
+  listSellers(): Promise<SellerView[]>;
+  getSeller(sellerId: string): Promise<SellerView>;
+  /** Desk: verify, pause or reject a seller (reject is irreversible and confirmed by the UI). */
+  setSellerVerification(sellerId: string, status: 'verified' | 'paused' | 'rejected', note?: string): Promise<SellerView>;
+  /** Desk: requests a payout-account change; starts the 72 h cooling-off and re-verification. */
+  changeSellerPayoutAccount(sellerId: string, account: PayoutAccount): Promise<SellerView>;
+  /** Desk (simulado CNR feed): a new lien on a unit puts the seller's plans on hold. */
+  raiseCnrAlert(sellerId: string, unitId: string, detail: string): Promise<SellerView>;
+  listPayouts(filter?: { planId?: string; sellerId?: string }): Promise<PayoutView[]>;
+  /** Desk: retries an option B payout in `error`, or a `retenido` release whose gate has cleared. */
+  retryPayout(payoutId: string): Promise<PayoutView>;
+  /** Every message the system would have sent, newest first; optionally one plan's. */
+  listOutbox(planId?: string): Promise<OutboxMessage[]>;
+  /** Desk: one adverse-event action on a plan through the policy layer (dry run, evidence, provider, store). */
+  runAdverseAction(action: AdverseAction, detail?: string): Promise<PlanView>;
 }
 
 export interface DemoApiOptions {
@@ -99,9 +173,13 @@ export interface DemoApiOptions {
   now?: () => number;
   /**
    * Testnet mode only: mirrors locks, deposits, releases and breaks on the payment_plan contract.
-   * Undefined in mock mode, where every path below behaves exactly as in Stage 1.
+   * Undefined in mock mode, where every path below behaves exactly as in Stage 1. `chain` is the
+   * Colombia instance; `chains` adds one bridge per corridor (El Salvador runs on a second instance
+   * of the same Wasm with its own payee). A plan uses `chains[corridor]`, falling back to `chain`
+   * for Colombia only.
    */
   chain?: ChainBridge;
+  chains?: Partial<Record<CorridorId, ChainBridge>>;
 }
 
 export class DemoApi implements CasaPuenteApi {
@@ -110,6 +188,7 @@ export class DemoApi implements CasaPuenteApi {
   private readonly runtime: MockRuntime;
   private readonly now: () => number;
   private readonly chain: ChainBridge | undefined;
+  private readonly chains: Partial<Record<CorridorId, ChainBridge>>;
   private offset = 0;
 
   constructor(opts: DemoApiOptions) {
@@ -118,7 +197,13 @@ export class DemoApi implements CasaPuenteApi {
     this.runtime = opts.runtime;
     this.now = opts.now ?? (() => Date.now());
     this.chain = opts.chain;
+    this.chains = { ...(opts.chain ? { co: opts.chain } : {}), ...(opts.chains ?? {}) };
     this.runtime.clockOffset = () => this.offset;
+  }
+
+  /** The chain bridge a plan's corridor runs on (undefined in mock mode or for an unmapped corridor). */
+  protected chainFor(plan: Pick<Plan, 'corridor'>): ChainBridge | undefined {
+    return this.chains[corridorIdOf(plan)];
   }
 
   // ---------- chain helpers (testnet mode) ----------
@@ -771,6 +856,79 @@ export class DemoApi implements CasaPuenteApi {
 
   async setErrorMode(on: boolean): Promise<DemoState> {
     return this.saveState({ errorMode: on });
+  }
+
+  // ---------- El Salvador corridor and the office portals (implemented in services/src/api/svApi.ts) ----------
+
+  private notImplemented(method: string): never {
+    throw new ApiError('NOT_IMPLEMENTED', `${method} is not implemented yet`);
+  }
+
+  async listOffices(): Promise<Office[]> {
+    return this.notImplemented('listOffices');
+  }
+  async getPayOptions(_planId: string, _idx: number): Promise<PayOptionsView> {
+    return this.notImplemented('getPayOptions');
+  }
+  async requestCashReference(_planId: string, _idx: number): Promise<Payment> {
+    return this.notImplemented('requestCashReference');
+  }
+  async renewCashReference(_paymentId: string): Promise<Payment> {
+    return this.notImplemented('renewCashReference');
+  }
+  async completeCashReference(_paymentId: string, _onProgress?: ProgressFn): Promise<Receipt> {
+    return this.notImplemented('completeCashReference');
+  }
+  async getPayment(_paymentId: string): Promise<Payment> {
+    return this.notImplemented('getPayment');
+  }
+  async listPayments(_filter?: { planId?: string; officeId?: string; cashierId?: string; date?: ISODate; status?: Payment['status'] }): Promise<Payment[]> {
+    return this.notImplemented('listPayments');
+  }
+  async searchBuyers(_query: string): Promise<CounterSearchResult[]> {
+    return this.notImplemented('searchBuyers');
+  }
+  async takeCounterPayment(
+    _args: { planId: string; idx: number; tender: Tender; amountReceived: number; officeId: string; cashierId: string },
+    _onProgress?: ProgressFn,
+  ): Promise<{ payment: Payment; receipt: Receipt }> {
+    return this.notImplemented('takeCounterPayment');
+  }
+  async getShiftTotal(_args: { officeId: string; cashierId: string }): Promise<ShiftTotal> {
+    return this.notImplemented('getShiftTotal');
+  }
+  async sendReceiptMessage(_planId: string, _idx: number): Promise<OutboxMessage> {
+    return this.notImplemented('sendReceiptMessage');
+  }
+  async listPlanRows(): Promise<PlanRow[]> {
+    return this.notImplemented('listPlanRows');
+  }
+  async listSellers(): Promise<SellerView[]> {
+    return this.notImplemented('listSellers');
+  }
+  async getSeller(_sellerId: string): Promise<SellerView> {
+    return this.notImplemented('getSeller');
+  }
+  async setSellerVerification(_sellerId: string, _status: 'verified' | 'paused' | 'rejected', _note?: string): Promise<SellerView> {
+    return this.notImplemented('setSellerVerification');
+  }
+  async changeSellerPayoutAccount(_sellerId: string, _account: PayoutAccount): Promise<SellerView> {
+    return this.notImplemented('changeSellerPayoutAccount');
+  }
+  async raiseCnrAlert(_sellerId: string, _unitId: string, _detail: string): Promise<SellerView> {
+    return this.notImplemented('raiseCnrAlert');
+  }
+  async listPayouts(_filter?: { planId?: string; sellerId?: string }): Promise<PayoutView[]> {
+    return this.notImplemented('listPayouts');
+  }
+  async retryPayout(_payoutId: string): Promise<PayoutView> {
+    return this.notImplemented('retryPayout');
+  }
+  async listOutbox(_planId?: string): Promise<OutboxMessage[]> {
+    return this.notImplemented('listOutbox');
+  }
+  async runAdverseAction(_action: AdverseAction, _detail?: string): Promise<PlanView> {
+    return this.notImplemented('runAdverseAction');
   }
 
   /** Current wall-clock time in ms (injected for tests). */
