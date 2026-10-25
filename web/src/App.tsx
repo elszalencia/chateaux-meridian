@@ -32,7 +32,7 @@ export default function App() {
         <div className="mx-auto flex max-w-[1360px] flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
           <div className="flex items-center gap-3">
             <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-700 text-lg font-bold text-white">
-              CP
+              C
             </span>
             <div>
               <p className="text-lg font-semibold leading-tight">{t('app.title')}</p>
