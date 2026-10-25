@@ -1,4 +1,4 @@
--- Casa Puente: initial schema (scope §10 data shape).
+-- Chateaux: initial schema (scope §10 data shape).
 -- Stage 1 does not run against Supabase; the in-memory store mirrors these tables one-to-one so the
 -- Supabase-backed Store can be dropped in without changing the API. Row-level security policies use
 -- a `role` claim in the JWT (`buyer`, `builder`, `treasury`); a buyer's `auth.uid()` maps to buyers.auth_user_id.
