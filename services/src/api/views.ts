@@ -46,8 +46,8 @@ import type {
   ShiftTotal,
   Tender,
 } from '../domain/types';
-import { DEFAULT_CORRIDOR, corridor, corridorIdOf, corridorOf, minorToMajor, type Corridor } from '../corridors/index';
-import { addDays, businessDaysBetweenIn, compareISO, diffDays, quarterKey, yearOf } from '../domain/dates';
+import { DEFAULT_CORRIDOR, beyondGraceIn, corridor, corridorIdOf, corridorOf, minorToMajor, type Corridor } from '../corridors/index';
+import { addDays, compareISO, diffDays, quarterKey, yearOf } from '../domain/dates';
 import { GRACE_BUSINESS_DAYS, businessDaysLate, graceEndDate, roundCop, roundUsd, usdDue } from '../lock/engine';
 import { defaultGovernance, fundsAllowed } from '../policy/transitions';
 import { reasonInfo } from '../policy/reasons';
@@ -60,10 +60,7 @@ function owes(i: Installment): boolean {
 export const RECON_ROUNDING_TOLERANCE_COP = 50;
 export const RECON_BASIS_TOLERANCE_COP = 1000;
 
-/** Past the grace period on the corridor's business-day calendar (the default corridor: the lock engine's rule). */
-export function beyondGraceIn(today: ISODate, dueDate: ISODate, c: Corridor): boolean {
-  return businessDaysBetweenIn(dueDate, today, c.holidays) > c.graceBusinessDays;
-}
+export { beyondGraceIn };
 
 /** The amount field already holds the payment currency: no rate converts it. */
 export function paysInUsd(c: Corridor): boolean {
