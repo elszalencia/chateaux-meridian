@@ -229,6 +229,46 @@ describe('MoneyGram reference: request → pending → completed credits, never 
   });
 });
 
+describe('session clock on payments', () => {
+  const seedClock = Date.parse(`${BASE_DATE}T14:00:00.000Z`);
+
+  it('pay options and every payment read carry the services\' now; a pending cash reference carries its minutes pending', async () => {
+    const t = { ms: T0 };
+    const api = fast(t);
+    const o = await api.getPayOptions(PLAN_ROXANA, 5);
+    expect(o.now).toBe(new Date(seedClock).toISOString());
+    const mg = o.options[0]!.payment!;
+    expect(mg.now).toBe(o.now);
+    // seeded 12 minutes before the seed clock: past the corridor's alert threshold
+    expect(mg.pendingMinutes).toBe(12);
+    expect(mg.pendingMinutes).toBeGreaterThan(SV.moneyGram!.pendingAlertMinutes);
+
+    t.ms = T0 + 5 * 60_000 + 30_000;
+    const later = new Date(seedClock + 5 * 60_000 + 30_000).toISOString();
+    const p = await api.getPayment('pay-plan-roxana-5-pending');
+    expect(p).toMatchObject({ now: later, pendingMinutes: 17 });
+    expect((await api.getPlan(PLAN_ROXANA)).payments.find((x) => x.id === p.id)).toMatchObject({ now: later, pendingMinutes: 17 });
+    expect((await api.listPayments({ planId: PLAN_ROXANA })).find((x) => x.id === p.id)).toMatchObject({ now: later, pendingMinutes: 17 });
+    // anything that is not a pending cash reference has no minutes pending
+    expect(await api.getPayment('pay-plan-roxana-5-expired')).toMatchObject({ now: later, pendingMinutes: null });
+    expect((await api.listPayments({ planId: PLAN_ROXANA, status: 'completed' })).every((x) => x.pendingMinutes === null && x.now === later)).toBe(true);
+  });
+
+  it('a new reference starts at 0 minutes pending, and the clock fields are never stored', async () => {
+    const t = { ms: T0 };
+    const { api, store } = apiOver(() => undefined, { now: () => t.ms });
+    t.ms = T0 + 61 * 60_000; // the seeded reference has expired
+    const renewed = await api.renewCashReference('pay-plan-roxana-5-pending');
+    expect(renewed).toMatchObject({ status: 'pending', pendingMinutes: 0, now: new Date(seedClock + 61 * 60_000).toISOString() });
+    const row = (await store.get('payments', renewed.id))!;
+    expect('now' in row || 'pendingMinutes' in row).toBe(false);
+    // a counter payment is completed on the spot: stamped, nothing pending
+    const counter = await api.takeCounterPayment({ planId: PLAN_ROXANA, idx: 5, tender: 'cash', amountReceived: 80_000, officeId: OFFICE_MAXI_WOODBRIDGE, cashierId: 'cajero-1' });
+    expect(counter.payment).toMatchObject({ status: 'completed', pendingMinutes: null, now: renewed.now });
+    expect('now' in (await store.get('payments', counter.payment.id))!).toBe(false);
+  });
+});
+
 describe('counter', () => {
   it('finds buyers by phone digits or by name without accents; an unknown number is an empty list', async () => {
     const api = fast();

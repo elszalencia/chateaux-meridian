@@ -1,7 +1,8 @@
 // Counter session and the corridor session clock as the office screens see them.
 // - The cashier works at one office for the shift (remembered per tab); the demo cashier id is fixed.
 // - The services run the corridor on a session clock (the demo day at the seed hour plus the time
-//   elapsed since the page loaded it); the "pending for more than N minutes" flags read the same clock.
+//   elapsed in the session). Payments carry that clock (`now`, `pendingMinutes`; see
+//   app/serviceClock.ts); `useSessionNow` remains only for the seller's cooling-off hours.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { svSeedClock, type ISODate, type Office } from '@casa-puente/services';
@@ -47,8 +48,4 @@ export function useSessionNow(today: ISODate | null | undefined, tickMs = 30_000
   if (!today) return null;
   if (!started.current || started.current.day !== today) started.current = { day: today, at: Date.now() };
   return Date.parse(svSeedClock(today)) + (Date.now() - started.current.at);
-}
-
-export function minutesSince(iso: string, nowMs: number): number {
-  return Math.max(0, Math.floor((nowMs - Date.parse(iso)) / 60_000));
 }

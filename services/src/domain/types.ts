@@ -347,6 +347,16 @@ export interface Payment {
   receiptId: string | null;
 }
 
+/**
+ * A payment as the API hands it out: the stored row plus the services' session clock at the moment
+ * it was read and, for a pending cash reference, the whole minutes it has waited on that clock.
+ * Screens read these instead of estimating the clock; neither field is stored.
+ */
+export interface PaymentView extends Payment {
+  now: ISODateTime;
+  pendingMinutes: number | null;
+}
+
 export type SellerTier = 1 | 2;
 
 export type SellerVerificationStatus = 'pending' | 'verified' | 'paused' | 'rejected';
@@ -583,7 +593,7 @@ export interface PlanView {
   /** El Salvador: the seller and its title check for this unit; null in Colombia. */
   seller: SellerSummary | null;
   /** Open payment attempts on this plan (pending MoneyGram references and the like). */
-  payments: Payment[];
+  payments: PaymentView[];
 }
 
 /** What the buyer and the counter see about the seller: never the payout account. */
@@ -611,7 +621,7 @@ export interface PayOptionView {
   /** Counter method: the buyer's nearest office. */
   office: Office | null;
   /** MoneyGram: the open reference for this installment, if one exists. */
-  payment: Payment | null;
+  payment: PaymentView | null;
   /** MoneyGram: limits that apply (from config), echoed so the sheet can explain a block. */
   limits: { minUsd: number; maxUsd: number } | null;
 }
@@ -623,6 +633,8 @@ export interface PayOptionsView {
   dueDate: ISODate;
   usdDue: number;
   options: PayOptionView[];
+  /** The services' session clock when the options were read. */
+  now: ISODateTime;
 }
 
 /** A counter search hit: the buyer, the plan and what is payable now. */

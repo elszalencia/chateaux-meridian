@@ -3,17 +3,17 @@
 // seller, the adverse-event actions and the WhatsApp history of this plan. The Colombia views open
 // from here only when the plan's corridor has them (config `views`).
 
-import { CORRIDORS, type InstallmentView, type OutboxMessage, type Payment, type PayoutView, type PlanView } from '@casa-puente/services';
+import { CORRIDORS, type InstallmentView, type OutboxMessage, type PaymentView, type PayoutView, type PlanView } from '@casa-puente/services';
 import { api } from '../../../../app/api';
 import { useDemo } from '../../../../app/demo';
 import { useFormat } from '../../../../app/format';
 import { useT } from '../../../../app/i18n';
 import { useAsync } from '../../../../app/hooks';
+import { pendingMinutesAt, useServiceClock } from '../../../../app/serviceClock';
 import { Badge, Button, EmptyState, ErrorState, Spinner } from '../../../../components/ui';
 import { Drawer, DrawerSection, Facts } from '../../shared/Drawer';
 import { useOT } from '../../shared/i18n';
 import { useMoney } from '../../shared/money';
-import { minutesSince, useSessionNow } from '../../shared/session';
 import { Simulado } from '../../shared/Simulado';
 import { GateNote, PayoutStatusBadge, PlanStatusBadge } from '../badges';
 import type { DeskTab } from '../EscritorioView';
@@ -23,7 +23,7 @@ import { AdverseActions } from './AdverseActions';
 interface PlanDetail {
   view: PlanView;
   status: Awaited<ReturnType<typeof api.listPlanRows>>[number]['status'] | null;
-  payments: Payment[];
+  payments: PaymentView[];
   payouts: PayoutView[];
   outbox: OutboxMessage[];
 }
@@ -173,18 +173,17 @@ function Schedule({ pv }: { pv: PlanView }) {
   );
 }
 
-function PaymentsList({ payments, pv }: { payments: Payment[]; pv: PlanView }) {
+function PaymentsList({ payments, pv }: { payments: PaymentView[]; pv: PlanView }) {
   const ot = useOT();
   const f = useFormat();
   const money = useMoney();
-  const { state } = useDemo();
-  const now = useSessionNow(state?.today);
+  const clock = useServiceClock(payments[0]?.now, { tickMs: 30_000 });
   const mg = CORRIDORS[pv.corridor].moneyGram;
   if (payments.length === 0) return <EmptyState title={ot('planes.drawer.noPayments')} body={ot('planes.drawer.noPaymentsBody')} />;
   return (
     <ul className="space-y-2">
       {payments.map((p) => {
-        const pendingMin = p.status === 'pending' && now != null ? minutesSince(p.createdAt, now) : null;
+        const pendingMin = pendingMinutesAt(p, clock);
         return (
           <li key={p.id} data-testid={`payment-${p.id}`} data-status={p.status} className="rounded-lg border border-ink-200 px-3 py-2 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">

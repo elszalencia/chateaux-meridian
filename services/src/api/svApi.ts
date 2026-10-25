@@ -31,6 +31,7 @@ import type {
   PayOptionsView,
   PayOptionView,
   Payment,
+  PaymentView,
   Payout,
   PayoutAccount,
   PayoutView,
@@ -104,6 +105,20 @@ const firstName = (name: string): string => name.split(' ')[0] ?? name;
 
 export function nowIso(ctx: SvContext): ISODateTime {
   return new Date(ctx.nowMs()).toISOString();
+}
+
+/**
+ * A payment as the API hands it out, stamped with the session clock. `pendingMinutes` counts whole
+ * minutes since a pending cash reference was issued (null for anything else), so the counter's
+ * "pending for more than N minutes" flag and the buyer's countdown read the services' clock.
+ */
+export function paymentView(p: Payment, nowMs: number): PaymentView {
+  const pending = p.method === 'moneygram_cash' && p.status === 'pending';
+  return {
+    ...p,
+    now: new Date(nowMs).toISOString(),
+    pendingMinutes: pending ? Math.max(0, Math.floor((nowMs - Date.parse(p.createdAt)) / 60_000)) : null,
+  };
 }
 
 /** The ApiError code for a seller gate reason (`seller_cooling_off` → `SELLER_COOLING_OFF`). */
@@ -183,6 +198,7 @@ export async function getPayOptions(ctx: SvContext, planId: string, idx: number)
   const view = installmentView(row, await ctx.today(), ctx.spot(), [], c);
   const usdDue = view.usdShown;
   const payments = (await ctx.store.all('payments')).filter((p) => p.planId === planId && p.idx === idx);
+  const now = ctx.nowMs();
   const options: PayOptionView[] = [];
   for (const method of c.payMethods) {
     const feeUsd = c.feesUsd[method];
@@ -198,7 +214,7 @@ export async function getPayOptions(ctx: SvContext, planId: string, idx: number)
         ...base,
         enabled: code == null,
         disabledReason: code === 'ABOVE_LIMIT' ? 'above_limit' : code === 'BELOW_LIMIT' ? 'below_limit' : null,
-        payment: open ?? null,
+        payment: open ? paymentView(open, now) : null,
         limits: { minUsd: c.moneyGram.minUsd, maxUsd: c.moneyGram.maxUsd },
       });
     } else if (method === 'office_counter') {
@@ -207,7 +223,7 @@ export async function getPayOptions(ctx: SvContext, planId: string, idx: number)
       options.push(base);
     }
   }
-  return { planId, idx, number: idx + 1, dueDate: row.dueDate, usdDue, options };
+  return { planId, idx, number: idx + 1, dueDate: row.dueDate, usdDue, options, now: new Date(now).toISOString() };
 }
 
 // ---------- Payments ----------

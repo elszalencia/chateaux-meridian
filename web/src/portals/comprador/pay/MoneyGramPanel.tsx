@@ -5,7 +5,7 @@
 // "Nueva referencia". The network is simulated, so completing the cash-in is a demo control here.
 
 import { useCallback, useEffect, useState } from 'react';
-import type { InstallmentView, Payment, PayOptionView, PayStep, PlanView, Receipt } from '@casa-puente/services';
+import type { InstallmentView, PaymentView, PayOptionView, PayStep, PlanView, Receipt } from '@casa-puente/services';
 import { api } from '../../../app/api';
 import { useFormat } from '../../../app/format';
 import { useAction } from '../../../app/hooks';
@@ -25,7 +25,7 @@ export function MoneyGramPanel({ view, installment, option, onPaid }: { view: Pl
   const c = corridorOfView(view);
   const network = c.partners.cashNetwork ?? '';
   const seller = view.seller?.tradeName ?? view.plan.trustCompany;
-  const [payment, setPayment] = useState<Payment | null>(option.payment);
+  const [payment, setPayment] = useState<PaymentView | null>(option.payment);
   const [steps, setSteps] = useState<Partial<Record<PayStep, boolean>>>({});
 
   const request = useAction(useCallback(() => api.requestCashReference(view.plan.id, installment.idx), [view.plan.id, installment.idx]));
@@ -38,7 +38,7 @@ export function MoneyGramPanel({ view, installment, option, onPaid }: { view: Pl
     }, []),
   );
 
-  const left = useCountdown(payment, view.today);
+  const left = useCountdown(payment);
   const status = payment?.status ?? 'none';
 
   // At zero the services already treat the reference as expired; read it back so the panel says so.

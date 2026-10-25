@@ -22,6 +22,7 @@ import type {
   OutboxMessage,
   PayOptionsView,
   Payment,
+  PaymentView,
   PayoutAccount,
   PayoutView,
   PayStep,
@@ -107,18 +108,18 @@ export interface CasaPuenteApi {
   /** The pay methods offered to this buyer for one installment, with fees, limits and any open reference. */
   getPayOptions(planId: string, idx: number): Promise<PayOptionsView>;
   /** Issues a MoneyGram cash-in reference (status `pending`); the plan is not credited yet. */
-  requestCashReference(planId: string, idx: number): Promise<Payment>;
+  requestCashReference(planId: string, idx: number): Promise<PaymentView>;
   /** Replaces an expired reference with a new one. */
-  renewCashReference(paymentId: string): Promise<Payment>;
+  renewCashReference(paymentId: string): Promise<PaymentView>;
   /** Demo control (simulado): the network reports the cash-in as completed, which credits the plan. */
   completeCashReference(paymentId: string, onProgress?: ProgressFn): Promise<Receipt>;
-  getPayment(paymentId: string): Promise<Payment>;
-  listPayments(filter?: { planId?: string; officeId?: string; cashierId?: string; date?: ISODate; status?: Payment['status'] }): Promise<Payment[]>;
+  getPayment(paymentId: string): Promise<PaymentView>;
+  listPayments(filter?: { planId?: string; officeId?: string; cashierId?: string; date?: ISODate; status?: Payment['status'] }): Promise<PaymentView[]>;
 
   /** Counter: finds buyers by phone digits or name. Empty query → empty list. */
   searchBuyers(query: string): Promise<CounterSearchResult[]>;
   /** Counter: takes cash or card for one installment, credits the plan and writes the receipt. */
-  takeCounterPayment(args: { planId: string; idx: number; tender: Tender; amountReceived: number; officeId: string; cashierId: string }, onProgress?: ProgressFn): Promise<{ payment: Payment; receipt: Receipt }>;
+  takeCounterPayment(args: { planId: string; idx: number; tender: Tender; amountReceived: number; officeId: string; cashierId: string }, onProgress?: ProgressFn): Promise<{ payment: PaymentView; receipt: Receipt }>;
   /** Counter: today's takings by tender for one cashier at one office. */
   getShiftTotal(args: { officeId: string; cashierId: string }): Promise<ShiftTotal>;
   /** Sends the receipt link through the message channel (mock outbox). */
@@ -350,7 +351,11 @@ export class DemoApi implements CasaPuenteApi {
     const b = await this.planBundle(planId);
     const seller = b.plan.sellerId ? await this.store.get('sellers', b.plan.sellerId) : undefined;
     const units = seller ? (await this.store.all('seller_units')).filter((u) => u.sellerId === seller.id) : [];
-    const payments = (await this.store.all('payments')).filter((p) => p.planId === planId && (p.status === 'pending' || p.status === 'quote_expired')).sort((a, c) => c.createdAt.localeCompare(a.createdAt));
+    const nowMs = this.sessionClockMs();
+    const payments = (await this.store.all('payments'))
+      .filter((p) => p.planId === planId && (p.status === 'pending' || p.status === 'quote_expired'))
+      .sort((a, c) => c.createdAt.localeCompare(a.createdAt))
+      .map((p) => sv.paymentView(p, nowMs));
     return buildPlanView({
       ...b,
       locks: await this.store.all('locks'),
@@ -1009,20 +1014,23 @@ export class DemoApi implements CasaPuenteApi {
   async getPayOptions(planId: string, idx: number): Promise<PayOptionsView> {
     return this.svRead('getPayOptions', (ctx) => sv.getPayOptions(ctx, planId, idx));
   }
-  async requestCashReference(planId: string, idx: number): Promise<Payment> {
-    return this.svWrite('requestCashReference', (ctx) => sv.requestCashReference(ctx, planId, idx));
+  async requestCashReference(planId: string, idx: number): Promise<PaymentView> {
+    return this.svWrite('requestCashReference', async (ctx) => sv.paymentView(await sv.requestCashReference(ctx, planId, idx), ctx.nowMs()));
   }
-  async renewCashReference(paymentId: string): Promise<Payment> {
-    return this.svWrite('renewCashReference', (ctx) => sv.renewCashReference(ctx, paymentId));
+  async renewCashReference(paymentId: string): Promise<PaymentView> {
+    return this.svWrite('renewCashReference', async (ctx) => sv.paymentView(await sv.renewCashReference(ctx, paymentId), ctx.nowMs()));
   }
   async completeCashReference(paymentId: string, onProgress?: ProgressFn): Promise<Receipt> {
     return this.svWrite('completeCashReference', (ctx) => sv.completeCashReference(ctx, paymentId, onProgress));
   }
-  async getPayment(paymentId: string): Promise<Payment> {
-    return this.svRead('getPayment', (ctx) => sv.getPayment(ctx, paymentId));
+  async getPayment(paymentId: string): Promise<PaymentView> {
+    return this.svRead('getPayment', async (ctx) => sv.paymentView(await sv.getPayment(ctx, paymentId), ctx.nowMs()));
   }
-  async listPayments(filter?: { planId?: string; officeId?: string; cashierId?: string; date?: ISODate; status?: Payment['status'] }): Promise<Payment[]> {
-    return this.svRead('listPayments', (ctx) => sv.listPayments(ctx, filter));
+  async listPayments(filter?: { planId?: string; officeId?: string; cashierId?: string; date?: ISODate; status?: Payment['status'] }): Promise<PaymentView[]> {
+    return this.svRead('listPayments', async (ctx) => {
+      const nowMs = ctx.nowMs();
+      return (await sv.listPayments(ctx, filter)).map((p) => sv.paymentView(p, nowMs));
+    });
   }
   async searchBuyers(query: string): Promise<CounterSearchResult[]> {
     return this.svRead('searchBuyers', (ctx) => sv.searchBuyers(ctx, query));
@@ -1030,8 +1038,11 @@ export class DemoApi implements CasaPuenteApi {
   async takeCounterPayment(
     args: { planId: string; idx: number; tender: Tender; amountReceived: number; officeId: string; cashierId: string },
     onProgress?: ProgressFn,
-  ): Promise<{ payment: Payment; receipt: Receipt }> {
-    return this.svWrite('takeCounterPayment', (ctx) => sv.takeCounterPayment(ctx, args, onProgress));
+  ): Promise<{ payment: PaymentView; receipt: Receipt }> {
+    return this.svWrite('takeCounterPayment', async (ctx) => {
+      const r = await sv.takeCounterPayment(ctx, args, onProgress);
+      return { ...r, payment: sv.paymentView(r.payment, ctx.nowMs()) };
+    });
   }
   async getShiftTotal(args: { officeId: string; cashierId: string }): Promise<ShiftTotal> {
     return this.svRead('getShiftTotal', (ctx) => sv.getShiftTotal(ctx, args));

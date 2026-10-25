@@ -35,6 +35,7 @@ import type {
   UnitSummary,
   CurvePoint,
   Payment,
+  PaymentView,
   SellerSummary,
   PlanRow,
   PlanDeskStatus,
@@ -209,7 +210,7 @@ export function buildPlanView(args: {
   governance?: PlanGovernance;
   events?: PolicyEvent[];
   seller?: SellerSummary | null;
-  payments?: Payment[];
+  payments?: PaymentView[];
 }): PlanView {
   const c = corridorOf(args.plan);
   const governance = governanceView({ planId: args.plan.id, gov: args.governance, installments: args.installments, events: args.events, today: args.today, corridor: c });
