@@ -10,7 +10,7 @@ import { useRoute, VIEWS } from './app/router';
 import { DemoBar } from './components/DemoBar';
 import { Spinner } from './components/ui';
 
-const Comprador = lazy(() => import('./views/comprador/CompradorView'));
+const Comprador = lazy(() => import('./portals/comprador/CompradorPortal'));
 const Oficina = lazy(() => import('./portals/oficina/OficinaView'));
 const Constructora = lazy(() => import('./views/constructora/ConstructoraView'));
 const Tesoreria = lazy(() => import('./views/tesoreria/TesoreriaView'));
