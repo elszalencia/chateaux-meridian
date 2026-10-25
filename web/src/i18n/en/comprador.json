@@ -1,1 +1,194 @@
-{}
+{
+  "comprador": {
+    "portal": {
+      "simulated": "simulated",
+      "newTab": "(opens in a new tab)",
+      "noFee": "No fee",
+      "feeBreakdown": "Installment {usd} + fee {fee}",
+      "unitLabel": "{unit} · {project}",
+      "home": {
+        "planLine": "Plan {ref} · Seller: {seller}",
+        "priceLine": "Price {price} · Down payment {down} in {count} installments of {usd}",
+        "calendarSubtitle": "{count} monthly installments of {usd}"
+      },
+      "property": {
+        "verified": "Property verified · CNR",
+        "inReview": "Property check under review · CNR",
+        "checkedOn": "Checked on {date}"
+      },
+      "next": {
+        "title": "Your next payment",
+        "headline": "Pay {usd} by {date}",
+        "installment": "Installment {n} of {count}",
+        "pay": "See ways to pay",
+        "payHint": "See how to pay installment {n} of {usd}",
+        "opensOn": "You can pay it from {date}.",
+        "blocked": "Payments are paused until the notice below is resolved.",
+        "openReference": "You have an open cash reference for installment {n}: {ref}.",
+        "allPaid": "You paid every installment!",
+        "allPaidBody": "Nothing left to pay. Your receipts stay below."
+      },
+      "cell": {
+        "amount": "Installment amount",
+        "paidOn": "Paid on",
+        "deliveredOn": "Delivered to the seller on",
+        "opensOn": "Payable from",
+        "received": "We received your payment. We deliver it to the seller on {date}, the installment's due date."
+      },
+      "sheet": {
+        "intro": "Choose how you want to pay. Each amount includes that method's fee.",
+        "methodsLabel": "Ways to pay",
+        "where": "Where",
+        "time": "How long",
+        "fee": "Fee {fee}",
+        "openReference": "Open reference: {ref}",
+        "expiredReference": "Your last reference expired",
+        "back": "← Other ways to pay",
+        "backHint": "Back to the list of ways to pay",
+        "notOpen": "Installment {n} cannot be paid yet",
+        "notOpenBody": "You can pay it from {date}. It is due {due}. We will message you on WhatsApp when it opens.",
+        "blocked": "Your plan is paused",
+        "noMethods": "No ways to pay are available",
+        "noMethodsBody": "Message your advisor and we will help you pay this installment."
+      },
+      "methods": {
+        "moneygram_cash": {
+          "name": "Cash at MoneyGram",
+          "where": "At a MoneyGram agent in the US (stores, pharmacies, supermarkets)",
+          "time": "Recorded when the agent confirms your payment, usually within minutes"
+        },
+        "office_counter": {
+          "name": "At an office or agency",
+          "where": "At your nearest office or agency",
+          "time": "Recorded as soon as you pay at the counter"
+        },
+        "ach": {
+          "name": "From your bank (ACH)",
+          "where": "Online, from your US bank account",
+          "time": "Recorded when the debit is confirmed"
+        }
+      },
+      "disabled": {
+        "above_limit": "Cash payments take up to {max} per reference. Pay this installment at the office or from your bank.",
+        "below_limit": "Cash payments need at least {min} per reference. Pay this installment at the office or from your bank.",
+        "state_excluded": "Cash payments are not available in your state. Pay at the office or from your bank.",
+        "method_not_offered": "This way to pay is not available for your plan.",
+        "plan_blocked": "Your plan is paused: payments are not accepted for now."
+      },
+      "mg": {
+        "intro": "Pay cash with a reference number at any {network} agent.",
+        "amount": "Hand over in cash",
+        "payTo": "Your payment goes to",
+        "payToHint": "Plan {ref}",
+        "howTo": "Create your reference number and take it to a {network} agent. The reference is valid for 60 minutes.",
+        "request": "Create reference",
+        "requestHint": "Create a cash payment reference for installment {n}",
+        "reference": "Reference number",
+        "expiresIn": "Expires in",
+        "countdownLabel": "Time left on the reference",
+        "expiresAt": "until {time}",
+        "step1": "Go to a {network} agent and say you are paying with a reference number.",
+        "step2": "Show the number and hand over {usd} in cash.",
+        "step3": "Keep the agent's receipt. We message you on WhatsApp when your installment is recorded.",
+        "locator": "Find a {network} agent near you",
+        "locatorUrl": "https://www.moneygram.com/mgo/us/en/locations",
+        "pendingNote": "Your installment is recorded only when the agent confirms the payment. Until then the reference shows as pending.",
+        "demoTitle": "Demo control",
+        "demoBody": "In the demo nobody goes to the agent. This button simulates {network} confirming the cash payment.",
+        "simulate": "Simulate payment at the agent",
+        "simulateHint": "Simulate {network} confirming the cash payment for this reference",
+        "expiredTitle": "Your reference expired",
+        "expiredBody": "Reference {ref} can no longer be used. Get a new one to pay in cash.",
+        "renew": "New reference",
+        "renewHint": "Get a new cash reference for installment {n}"
+      },
+      "counter": {
+        "agency": "Nearest licensed agency",
+        "office": "Nearest office",
+        "address": "{address}, {city}, {state}",
+        "hours": "Hours",
+        "officePhone": "Office phone",
+        "givePhone": "Give the cashier this number",
+        "givePhoneHint": "Your phone number finds your plan and the installment that is due.",
+        "amount": "Bring",
+        "after": "Pay in cash or by card. When you finish, the cashier gives you the receipt and we send it to you on WhatsApp.",
+        "noOffice": "We have not assigned you an office yet",
+        "noOfficeBody": "Message your advisor and they will tell you where to pay."
+      },
+      "ach": {
+        "amount": "Amount to debit",
+        "source": "ACH debit from your US account",
+        "destination": "{target}: {seller}",
+        "destinationHint": "Plan {ref}",
+        "confirm": "Confirm payment",
+        "confirmHint": "Confirm paying installment {n} for {usd} from your bank"
+      },
+      "steps": {
+        "recibido": "Payment received",
+        "convertido": "Converted",
+        "entregado": "Delivered to {seller}",
+        "on": "on {date}"
+      },
+      "done": {
+        "title": "Payment received · Installment {n}",
+        "body": "Done! We received your payment. It goes to the seller on {date}.",
+        "bodyDelivered": "Done! We received your payment and it is on its way to the seller.",
+        "close": "Back to my plan"
+      },
+      "receipt": {
+        "fee": "Fee",
+        "usdToSeller": "USD to the seller",
+        "delivery": "Delivery to the seller",
+        "method": "Paid with",
+        "seller": "Seller",
+        "unit": "Unit"
+      },
+      "delivery": {
+        "pending": "Delivered to the seller on the installment's due date",
+        "pendingOn": "Delivered to the seller on {date}",
+        "retenido": "On hold while {reason}",
+        "enviado": "Sent to the seller's bank",
+        "enviadoBy": "Sent to the seller's bank; credited by {date}",
+        "en_transito": "On its way to the seller's account",
+        "en_transitoBy": "On its way to the seller's account; credited by {date}",
+        "acreditado": "Credited to the seller's account on {date}",
+        "transferido": "Delivered to the seller on {date}",
+        "error": "The seller's bank rejected the transfer. Your payment is safe and we are fixing it."
+      },
+      "deliveryBadge": {
+        "pending": "To be delivered",
+        "retenido": "On hold",
+        "enviado": "Sent",
+        "en_transito": "On its way",
+        "acreditado": "Credited",
+        "transferido": "Delivered",
+        "error": "Under review"
+      },
+      "holdReasons": {
+        "seller_unverified": "the seller finishes verification",
+        "seller_paused": "we review the seller's account",
+        "seller_rejected": "your advisor contacts you",
+        "seller_cooling_off": "we verify a change to the seller's account",
+        "cnr_alert": "we review a registry notice on the property"
+      },
+      "receipts": {
+        "empty": "Your receipts will appear here",
+        "emptyBody": "When you pay your first installment, we keep the receipt here so you always have it at hand.",
+        "open": "See the receipt for installment {n}",
+        "openShort": "See receipt",
+        "missing": "No receipt for installment {n} yet",
+        "missingBody": "When you pay that installment, its receipt appears here."
+      },
+      "legend": {
+        "pagado": "Paid and delivered to the seller",
+        "abierto": "To pay",
+        "recibido": "Received (delivered to the seller on the due date)",
+        "no_pagado": "Unpaid (talk to your advisor)",
+        "condonado": "Waived by the seller",
+        "bloqueado": "Blocked",
+        "ofrecido": "Offered",
+        "roto": "Broken"
+      }
+    }
+  }
+}

@@ -11,13 +11,32 @@ import { Card } from '../../components/ui';
 import { CELL_CLASS, CheckIcon } from './shared';
 
 const STATES = ['pagado', 'bloqueado', 'ofrecido', 'abierto', 'roto'] as const;
+// Without rate locks (the corridor's `views.lock` is off) the lock states never occur, so the legend drops them.
+const NO_LOCK_STATES = ['pagado', 'abierto'] as const;
 // States that join the legend only when the plan has one: the adverse ones and "recibido" (paid
 // ahead of the due date, released on that date), which only El Salvador plans produce.
 const ADVERSE_STATES = ['no_pagado', 'condonado', 'recibido'] as const;
 // The muted date grey only passes contrast on white cells; tinted cells keep their own text colour.
 const DATE_CLASS: Partial<Record<InstallmentView['cellState'], string>> = { bloqueado: 'text-white', abierto: 'text-ink-500', ofrecido: 'text-ink-500' };
 
-export function PlanCalendar({ installments, installmentCop, onSelect }: { installments: InstallmentView[]; installmentCop: number; onSelect: (i: InstallmentView) => void }) {
+export function PlanCalendar({
+  installments,
+  installmentCop,
+  onSelect,
+  subtitle,
+  lockStates = true,
+  legendLabel,
+}: {
+  installments: InstallmentView[];
+  installmentCop: number;
+  onSelect: (i: InstallmentView) => void;
+  /** Replaces the default "{count} cuotas mensuales de COP …" line (corridors that bill in another currency). */
+  subtitle?: string;
+  /** Lists the lock states in the legend; off for corridors without rate locks. */
+  lockStates?: boolean;
+  /** Legend text per state; defaults to `comprador.calendar.legend<State>`. */
+  legendLabel?: (state: InstallmentView['cellState']) => string;
+}) {
   const t = useT();
   const f = useFormat();
   const quarters = new Map<number, InstallmentView[]>();
@@ -29,7 +48,7 @@ export function PlanCalendar({ installments, installmentCop, onSelect }: { insta
   return (
     <Card
       title={t('comprador.calendar.title')}
-      actions={<p className="text-sm text-ink-500">{t('comprador.calendar.subtitle', { count: installments.length, cop: f.cop(installmentCop) })}</p>}
+      actions={<p className="text-sm text-ink-500">{subtitle ?? t('comprador.calendar.subtitle', { count: installments.length, cop: f.cop(installmentCop) })}</p>}
     >
       <div data-testid="calendar" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[...quarters.entries()].map(([q, rows]) => (
@@ -76,10 +95,10 @@ export function PlanCalendar({ installments, installmentCop, onSelect }: { insta
         ))}
       </div>
       <ul aria-label={t('comprador.calendar.legend')} className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-ink-700">
-        {[...STATES, ...ADVERSE_STATES.filter((s) => installments.some((i) => i.cellState === s))].map((s) => (
+        {[...(lockStates ? STATES : NO_LOCK_STATES), ...ADVERSE_STATES.filter((s) => installments.some((i) => i.cellState === s))].map((s) => (
           <li key={s} className="flex items-center gap-2">
             <span aria-hidden="true" className={`inline-block h-4 w-6 rounded ${CELL_CLASS[s]}`} />
-            {t(`comprador.calendar.legend${s.charAt(0).toUpperCase()}${s.slice(1)}`)}
+            {legendLabel ? legendLabel(s) : t(`comprador.calendar.legend${s.charAt(0).toUpperCase()}${s.slice(1)}`)}
           </li>
         ))}
       </ul>
