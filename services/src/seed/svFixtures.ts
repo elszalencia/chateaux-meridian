@@ -47,6 +47,7 @@ import { addBusinessDaysIn, addDays, addMonths } from '../domain/dates';
 import { mockTxHash } from '../adapters/mockRuntime';
 import { defaultGovernance } from '../policy/transitions';
 import { REASONS } from '../policy/reasons';
+import { deepLinkFor } from '../channels/MessageChannel';
 
 export const PLAN_ROXANA = 'plan-roxana';
 export const PLAN_MARVIN = 'plan-marvin';
@@ -661,7 +662,7 @@ export function buildSvSeed(ctx: SvSeedContext): SvSeed {
     const { plan: _plan, ...rest } = m;
     return { ...rest, buyerId: buyer.id, to: e164(buyer.phone), channel: 'whatsapp', simulated: true };
   };
-  const payLink = (planId: string) => `#/c/${planId}/pagar`;
+  const payLink = (planId: string) => deepLinkFor('recordatorio', planId);
   outbox.push(
     msg({
       id: 'wa-roxana-recordatorio-5',
@@ -691,9 +692,9 @@ export function buildSvSeed(ctx: SvSeedContext): SvSeed {
       planId: roxana.id,
       template: 'pago_entregado',
       locale: 'es',
-      params: { n: 5, usd: '750.00', seller: sellerRows[0]!.tradeName, link: `#/c/${roxana.id}/recibo/4` },
+      params: { n: 5, usd: '750.00', seller: sellerRows[0]!.tradeName, link: deepLinkFor('pago_entregado', roxana.id, 4) },
       body: 'Tu cuota 5 de USD 750.00 fue entregada a Desarrollos Cuscatlán (ficticio) y quedó registrada en tu plan. Tu recibo: #/c/plan-roxana/recibo/4 (simulado)',
-      link: `#/c/${roxana.id}/recibo/4`,
+      link: deepLinkFor('pago_entregado', roxana.id, 4),
       createdAt: `${inst(roxana.id, 4).dueDate}T16:30:00.000Z`,
     }),
     msg({
@@ -713,9 +714,9 @@ export function buildSvSeed(ctx: SvSeedContext): SvSeed {
       planId: oscar.id,
       template: 'plan_en_pausa',
       locale: 'es',
-      params: { since: holdSince, reason: REASONS.CNR_LIEN.key, link: payLink(oscar.id) },
-      body: 'Hola Óscar, tu plan quedó en pausa el 17 de octubre mientras revisamos una novedad registral sobre la propiedad. No se tomarán pagos hasta resolverla; te avisaremos por aquí. Detalles: #/c/plan-oscar/pagar (simulado)',
-      link: payLink(oscar.id),
+      params: { since: holdSince, reason: REASONS.CNR_LIEN.key, link: deepLinkFor('plan_en_pausa', oscar.id) },
+      body: 'Hola Óscar, tu plan quedó en pausa el 17 de octubre mientras revisamos una novedad registral sobre la propiedad. No se tomarán pagos hasta resolverla; te avisaremos por aquí. Detalles: #/comprador/plan-oscar (simulado)',
+      link: deepLinkFor('plan_en_pausa', oscar.id),
       createdAt: `${holdSince}T15:00:00.000Z`,
     }),
   );

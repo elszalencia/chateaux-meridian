@@ -163,6 +163,8 @@ export interface DemoApiOptions {
   renderTemplate?: TemplateRenderer;
   /** Adverse-event seam; default: MockGovernanceProvider over the store (testnet passes one over the bridge). */
   governance?: GovernanceProvider;
+  /** Operator log (the testnet server passes its own); default: silent. */
+  log?: (msg: string) => void;
 }
 
 export class DemoApi implements CasaPuenteApi {
@@ -174,6 +176,7 @@ export class DemoApi implements CasaPuenteApi {
   private readonly chains: Partial<Record<CorridorId, ChainBridge>>;
   private readonly messages: MessageChannel;
   private readonly governance: GovernanceProvider;
+  private readonly log: (msg: string) => void;
   private readonly cashIn: CashInProvider;
   private readonly sellerPayouts: Record<PayoutOption, SellerPayoutProvider>;
   private offset = 0;
@@ -186,6 +189,7 @@ export class DemoApi implements CasaPuenteApi {
     this.runtime = opts.runtime;
     this.now = opts.now ?? (() => Date.now());
     this.chain = opts.chain;
+    this.log = opts.log ?? (() => {});
     this.chains = { ...(opts.chain ? { co: opts.chain } : {}), ...(opts.chains ?? {}) };
     this.runtime.clockOffset = () => this.offset;
     this.sessionStartMs = this.now();
@@ -244,8 +248,7 @@ export class DemoApi implements CasaPuenteApi {
       nowMs: () => this.sessionClockMs(),
       today: async () => (await this.state()).today,
       spot: () => this.spot(),
-      chainFor: (plan) => this.chainFor(plan),
-      chainPlanId: (planId) => this.chainPlanId(planId),
+      chainPlanOf: (plan) => this.chainPlanOf(plan),
       onChain: (what, run) => this.onChain(what, run),
       messages: this.messages,
       governance: () => this.governanceProvider(),
@@ -256,6 +259,19 @@ export class DemoApi implements CasaPuenteApi {
   }
 
   // ---------- chain helpers (testnet mode) ----------
+
+  /**
+   * The bridge of the plan's own corridor and its chain plan id, or null when the plan stays off
+   * chain: mock mode, a corridor without an instance, or a plan the last reset marked simulated
+   * because the network refused to create it (`demo_state.simulatedPlans`).
+   */
+  private async chainPlanOf(plan: Pick<Plan, 'id' | 'corridor'>): Promise<{ chain: ChainBridge; chainPlanId: number } | null> {
+    const chain = this.chainFor(plan);
+    if (!chain) return null;
+    const s = await this.state();
+    if (s.simulatedPlans?.[plan.id]) return null;
+    return { chain, chainPlanId: await this.chainPlanId(plan.id) };
+  }
 
   private async chainPlanId(planId: string): Promise<number> {
     const s = await this.state();
@@ -633,11 +649,8 @@ export class DemoApi implements CasaPuenteApi {
     // Testnet: the on-ramped USD becomes test USDC in the buyer's account and is deposited into
     // the plan's balance on chain before anything is converted.
     const stroops = DemoApi.stroopsFor(row, locked, usdPaid);
-    const chainPlanId = this.chain ? await this.chainPlanId(planId) : null;
-    if (this.chain && chainPlanId != null) {
-      const chain = this.chain;
-      await this.onChain('deposit', () => chain.deposit(plan.buyerId, chainPlanId, stroops));
-    }
+    const on = await this.chainPlanOf(plan);
+    if (on) await this.onChain('deposit', () => on.chain.deposit(plan.buyerId, on.chainPlanId, stroops));
     onProgress?.('recibido');
 
     // 2. Convertido: USDC → COP through the off-ramp.
@@ -648,8 +661,8 @@ export class DemoApi implements CasaPuenteApi {
     // 3. Entregado: the contract releases the installment (release_due at the locked amount, or
     //    release_spot for an open/broken one), the NDF settles, the receipt is written. The
     //    receipt's transaction hash is the release transaction.
-    if (this.chain && chainPlanId != null) {
-      const chain = this.chain;
+    if (on) {
+      const { chain, chainPlanId } = on;
       if (row.status === 'broken') await this.retryBreakOnChain(chain, chainPlanId, row.idx);
       const rel = await this.onChain(locked ? 'release_due' : 'release_spot', () =>
         locked ? chain.releaseDue(chainPlanId, row.idx) : chain.releaseSpot(chainPlanId, row.idx, stroops),
@@ -691,11 +704,10 @@ export class DemoApi implements CasaPuenteApi {
     const usdEach = rows.map((r) => usdToCoverCop(r.copDue, quote.rate));
     await this.onRampDeposit(plan.buyerId, roundUsd(usdEach.reduce((a, b) => a + b, 0)), `${plan.encargoRef}-ADELANTO`);
     const stroopsEach = usdEach.map((u) => usdToStroops(u));
-    const chainPlanId = this.chain ? await this.chainPlanId(planId) : null;
-    if (this.chain && chainPlanId != null) {
-      const chain = this.chain;
+    const on = await this.chainPlanOf(plan);
+    if (on) {
       const total = stroopsEach.reduce((a, b) => a + b, 0n);
-      await this.onChain('deposit', () => chain.deposit(plan.buyerId, chainPlanId, total));
+      await this.onChain('deposit', () => on.chain.deposit(plan.buyerId, on.chainPlanId, total));
     }
     onProgress?.('recibido');
     const txIds: string[] = [];
@@ -704,11 +716,10 @@ export class DemoApi implements CasaPuenteApi {
       txIds.push(txId);
     }
     onProgress?.('convertido');
-    if (this.chain && chainPlanId != null) {
-      const chain = this.chain;
+    if (on) {
       for (let k = 0; k < rows.length; k += 1) {
         const row = rows[k]!;
-        const rel = await this.onChain('release_spot', () => chain.releaseSpot(chainPlanId, row.idx, stroopsEach[k]!));
+        const rel = await this.onChain('release_spot', () => on.chain.releaseSpot(on.chainPlanId, row.idx, stroopsEach[k]!));
         txIds[k] = rel.txHash;
       }
     }
@@ -923,8 +934,10 @@ export class DemoApi implements CasaPuenteApi {
       // Testnet: fresh plans on chain (new plan ids), seeded in parallel (each on its own channel
       // accounts); the mapping lives in demo_state so every later call finds its chain plan. The
       // adverse-event demo plans stay off chain (mock-seed only). Each plan goes to the bridge of
-      // its corridor; a corridor without a bridge stays off chain.
+      // its own corridor and to no other; a corridor without a bridge stays off chain.
+      const before = await this.store.get('demo_state', 'singleton');
       const chainPlans: Record<string, number> = {};
+      const simulatedPlans: Record<string, string> = {};
       const chainContractIds: Partial<Record<CorridorId, string>> = {};
       for (const [id, bridge] of Object.entries(this.chains) as [CorridorId, ChainBridge][]) chainContractIds[id] = bridge.contractId;
       await Promise.all(
@@ -935,11 +948,33 @@ export class DemoApi implements CasaPuenteApi {
             if (!chain) return;
             const installments = seed.installments.filter((i) => i.planId === plan.id);
             const seedState = { locks: seed.locks.filter((l) => l.planId === plan.id), receipts: seed.receipts.filter((r) => r.planId === plan.id) };
-            const r = await this.onChain(`seed ${plan.id}`, () => chain.seedPlan(plan, installments, seedState));
-            chainPlans[plan.id] = r.chainPlanId;
+            try {
+              chainPlans[plan.id] = (await chain.seedPlan(plan, installments, seedState)).chainPlanId;
+            } catch (e) {
+              if (!(e instanceof ChainError && e.errorName === 'FeeTooHigh')) return this.onChain(`seed ${plan.id}`, () => Promise.reject(e));
+              // The network refused create_plan: its fee is above what one transaction can carry
+              // (rent on new entries while testnet state is above its target). Nothing is retried
+              // and nothing is spent. A chain plan this instance already holds for the plan is
+              // kept and shown as it stands on chain; otherwise the plan runs off chain, marked.
+              const kept = before?.chainContractIds?.[corridorIdOf(plan)] === chain.contractId ? before.chainPlans?.[plan.id] : undefined;
+              if (kept != null && (await chain.getStatus(kept).then(() => true, () => false))) {
+                chainPlans[plan.id] = kept;
+                this.log(`reset: ${plan.id}: create_plan refused (${e.message}); kept existing chain plan #${kept} as it stands on chain`);
+                return;
+              }
+              simulatedPlans[plan.id] = `simulado: ${e.message}`;
+              this.log(`reset: ${plan.id}: create_plan refused (${e.message}); the plan runs off chain, marked simulado`);
+            }
           }),
       );
-      seed.demo_state[0] = { ...seed.demo_state[0]!, mode: 'testnet', chainContractId: (this.chain ?? Object.values(this.chains)[0])?.contractId, chainContractIds, chainPlans };
+      seed.demo_state[0] = {
+        ...seed.demo_state[0]!,
+        mode: 'testnet',
+        chainContractId: (this.chain ?? Object.values(this.chains)[0])?.contractId,
+        chainContractIds,
+        chainPlans,
+        ...(Object.keys(simulatedPlans).length > 0 ? { simulatedPlans } : {}),
+      };
     }
     await this.store.replaceAll(seed);
     this.sessionStartMs = this.now();

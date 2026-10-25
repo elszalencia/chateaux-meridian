@@ -5,7 +5,8 @@
 // touches a provider or the contract: a corridor without the FX leg never sees `apply_lock`.
 
 import { CORRIDORS, CORRIDOR_IDS, corridor, majorToMinor, minorToMajor, type Corridor, type CorridorId } from '../../../config/corridors';
-import type { Plan } from '../domain/types';
+import type { ISODate, Plan } from '../domain/types';
+import { businessDaysBetweenIn } from '../domain/dates';
 
 export { CORRIDORS, CORRIDOR_IDS, corridor, majorToMinor, minorToMajor };
 export type { Corridor, CorridorId };
@@ -25,6 +26,11 @@ export function corridorOf(plan: Pick<Plan, 'corridor'> | null | undefined): Cor
 /** Amount in major units (pesos or dollars) of a minor-unit amount field of this plan. */
 export function majorAmount(plan: Pick<Plan, 'corridor'> | null | undefined, minor: number): number {
   return minorToMajor(minor, corridorOf(plan));
+}
+
+/** Past the grace period on the corridor's own business-day calendar (holidays included). */
+export function beyondGraceIn(today: ISODate, dueDate: ISODate, c: Corridor): boolean {
+  return businessDaysBetweenIn(dueDate, today, c.holidays) > c.graceBusinessDays;
 }
 
 /** Thrown by `assertLocksEnabled`; the API layer maps it onto its `LOCKS_DISABLED` error code. */

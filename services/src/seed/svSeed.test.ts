@@ -7,6 +7,7 @@ import { CORRIDORS } from '../../../config/corridors';
 import { businessDaysBetweenIn } from '../domain/dates';
 import type { Receipt } from '../domain/types';
 import { REASONS } from '../policy/reasons';
+import { deepLinkFor } from '../channels/MessageChannel';
 import {
   BASE_DATE,
   OFFICE_CHATEAUX_MIAMI,
@@ -252,7 +253,7 @@ describe('El Salvador seed: reconciliation and consistency', () => {
     for (const m of seed.wa_outbox) {
       expect(m.body.length).toBeLessThanOrEqual(1024);
       expect(m.to).toMatch(/^\+1\d{10}$/);
-      expect(m.link).toMatch(/^#\/c\/plan-[a-z]+\/(pagar|recibo\/\d+)$/);
+      expect(m.link).toMatch(/^#\/(c\/plan-[a-z]+\/(pagar|recibo\/\d+)|comprador\/plan-[a-z]+)$/);
       expect(m.body).toContain(m.link);
       expect(m).toMatchObject({ channel: 'whatsapp', simulated: true, locale: 'es' });
       expect(SV.whatsappTemplates).toContain(m.template);
@@ -260,6 +261,17 @@ describe('El Salvador seed: reconciliation and consistency', () => {
       expect(Object.keys(m.params).length).toBeGreaterThan(0);
     }
     expect(seed.wa_outbox.find((m) => m.id === 'wa-roxana-pago-entregado-4')!.link).toBe(`#/c/${PLAN_ROXANA}/recibo/4`);
+  });
+
+  it('every seeded outbox link is exactly what deepLinkFor(template, plan) produces', () => {
+    // The receipt templates carry the installment number n; their link names index n - 1.
+    const receiptTemplates = new Set(['pago_recibido', 'pago_entregado']);
+    for (const m of seed.wa_outbox) {
+      const idx = receiptTemplates.has(m.template) ? Number(m.params.n) - 1 : null;
+      expect(m.link, m.id).toBe(deepLinkFor(m.template, m.planId, idx));
+      expect(m.params.link, m.id).toBe(m.link);
+    }
+    expect(seed.wa_outbox.find((m) => m.id === 'wa-oscar-plan-en-pausa')!.link).toBe(`#/comprador/${PLAN_OSCAR}`);
   });
 
   it('every SV plan has a governance row and the Colombia rows are untouched', () => {

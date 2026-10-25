@@ -86,8 +86,8 @@ export interface SvContext {
   nowMs: () => number;
   today: () => Promise<ISODate>;
   spot: () => number;
-  chainFor: (plan: Plan) => ChainBridge | undefined;
-  chainPlanId: (planId: string) => Promise<number>;
+  /** The plan's own corridor bridge and chain plan id, or null when the plan stays off chain. */
+  chainPlanOf: (plan: Plan) => Promise<{ chain: ChainBridge; chainPlanId: number } | null>;
   onChain: <T>(what: string, run: () => Promise<T>) => Promise<T>;
   messages: MessageChannel;
   governance: () => GovernanceProvider;
@@ -479,9 +479,9 @@ export async function creditInstallment(ctx: SvContext, a: { plan: Plan; buyer: 
   const usdPaid = round2(usdDelivered + feeUsd);
   const paidAt = nowIso(ctx);
   let txHash = mockTxHash(`${a.plan.id}:${a.row.idx}:${paidAt}`);
-  const chain = ctx.chainFor(a.plan);
-  if (chain) {
-    const chainPlanId = await ctx.chainPlanId(a.plan.id);
+  const on = await ctx.chainPlanOf(a.plan);
+  if (on) {
+    const { chain, chainPlanId } = on;
     const stroops = minorToStroops(a.row.copDue, c);
     txHash = (await ctx.onChain('deposit', () => chain.deposit(a.plan.buyerId, chainPlanId, stroops))).txHash;
   }
@@ -577,9 +577,9 @@ export async function releaseInstallment(ctx: SvContext, a: { plan: Plan; buyer:
   // release_spot with exactly the installment's cents as stroops; never apply_lock or release_due here.
   const releasedAt = nowIso(ctx);
   let releaseTx = mockTxHash(`${a.plan.id}:${a.row.idx}:release:${releasedAt}`);
-  const chain = ctx.chainFor(a.plan);
-  if (chain) {
-    const chainPlanId = await ctx.chainPlanId(a.plan.id);
+  const on = await ctx.chainPlanOf(a.plan);
+  if (on) {
+    const { chain, chainPlanId } = on;
     const stroops = minorToStroops(a.row.copDue, c);
     if (stroops !== BigInt(a.row.copDue) * 100_000n) throw new Error(`release_spot: ${stroops} stroops is not ${a.row.copDue} cents × 100,000`);
     const rel = await ctx.onChain('release_spot', () => chain.releaseSpot(chainPlanId, a.row.idx, stroops));

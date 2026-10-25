@@ -1,5 +1,6 @@
 // NullPolicy: the policy engine to run while the business policy is undecided. It applies only the
-// mechanical rules the brief already fixes (5 business days of grace, §9) and records everything
+// mechanical rules the brief already fixes (5 business days of grace, §9, counted on the plan's
+// corridor calendar: Colombian festivos or Salvadoran asuetos) and records everything
 // else for a person to decide. It takes no financial action: it never refunds, never charges a
 // penalty, never declares a default and never cancels. Each rule is marked "policy pending".
 //
@@ -13,7 +14,7 @@
 import type { PlanFacts, PolicyDecision, PolicyEngine, RefundSizing } from './PolicyEngine';
 import { REASONS } from './reasons';
 import { compareISO, diffDays } from '../domain/dates';
-import { isBeyondGrace } from '../lock/engine';
+import { beyondGraceIn, corridorOf } from '../corridors/index';
 
 export const RULES = {
   LATE_IN_GRACE: 'R1-late-in-grace',
@@ -30,9 +31,10 @@ export class NullPolicy implements PolicyEngine {
   evaluate(f: PlanFacts): PolicyDecision[] {
     const out: PolicyDecision[] = [];
     let misses = f.governance.misses;
+    const c = corridorOf(f.plan);
     for (const row of [...f.installments].sort((a, b) => a.idx - b.idx)) {
       if (!UNPAID.has(row.status) || compareISO(f.today, row.dueDate) <= 0) continue;
-      const beyond = isBeyondGrace(f.today, row.dueDate) && diffDays(row.dueDate, f.today) >= f.governance.policy.graceDays;
+      const beyond = beyondGraceIn(f.today, row.dueDate, c) && diffDays(row.dueDate, f.today) >= f.governance.policy.graceDays;
       if (!beyond) {
         const recordId = `pe-${f.plan.id}-late-${row.idx}`;
         if (!f.recorded.has(recordId)) {

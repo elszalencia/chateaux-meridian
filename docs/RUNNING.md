@@ -106,10 +106,92 @@ The plans hold **the platform's test USDC**: asset code `USDC`, issued by a thro
 
 So the on-ramp runs for real: every testnet payment first completes one SEP-24 deposit against testanchor.stellar.org (SEP-10, then the interactive flow driven over HTTP, with Circle testnet USDC paid to the buyer's trustline). The installment itself is then funded with test USDC minted by our issuer. Each buyer account holds trustlines to both assets.
 
+## El Salvador corridor
+
+El Salvador plans are in USD, have no rate lock and pay out to the seller (option A or B). They run on
+a **second instance** of the same Wasm, with its own payee:
+
+| Corridor | Contract | Wasm |
+| --- | --- | --- |
+| Colombia | [`CAVPFFH4WFPHI3525RFM7AOGUXOP3USLCN6IPOF7AK5PMNAGQAJCCTXP`](https://stellar.expert/explorer/testnet/contract/CAVPFFH4WFPHI3525RFM7AOGUXOP3USLCN6IPOF7AK5PMNAGQAJCCTXP) | `a28d240c…755b1` |
+| El Salvador | [`CC5Y77X35KBPB773DE2JCYDWAXI3MHVKZ7HXF5R3QCRRSDO46PLNLEBQ`](https://stellar.expert/explorer/testnet/contract/CC5Y77X35KBPB773DE2JCYDWAXI3MHVKZ7HXF5R3QCRRSDO46PLNLEBQ) | `a28d240c…755b1` (deployed from the installed hash; no upload) |
+
+Corridor details (holidays, MoneyGram limits, payout options, the seller gate) are in
+[CORRIDORS.md](CORRIDORS.md).
+
+### Mock
+
+```powershell
+npm run demo:mock
+```
+
+Then open, on http://localhost:5173:
+
+| URL | Surface |
+| --- | --- |
+| `/#/comprador/plan-roxana` | buyer phone view, Roxana (pays cash; MoneyGram reference pending) |
+| `/#/comprador/plan-doris` | buyer in Louisiana: MoneyGram hidden |
+| `/#/c/plan-roxana/pagar` | WhatsApp deep link: opens the pay sheet |
+| `/#/oficina/mostrador` | office counter (touch) |
+| `/#/oficina/escritorio` | office desk: Planes, Vendedores, Pagos al vendedor, outbox |
+
+To run beside another checkout, move the port first: `$env:PORT=5176; npm run demo:mock`.
+
+### Reset
+
+```powershell
+npm run reset
+```
+
+Rebuilds both corridors' seed in a fresh in-memory store and prints the time (limit 10 s) with
+María's and Roxana's step-1 state. In the browser, click "Reiniciar demo" or open
+`http://localhost:5173/?reset=1`.
+
+### Testnet
+
+```powershell
+npm run deploy:testnet    # once: accounts, test USDC and the Colombia instance
+npm run deploy:sv         # once: the El Salvador buyers, payee and instance (reuses what exists)
+npm run demo:testnet
+```
+
+The server logs one line per instance at startup (`instance sv: contract CC5Y77…`). Without
+`PAYMENT_PLAN_CONTRACT_ID_SV` in `.env.testnet` the server still starts and the El Salvador plans
+stay off chain. "Reiniciar demo" (or `curl.exe -X POST http://localhost:8787/api/reset -H "Content-Type: application/json" -d '{\"args\":[]}'`) seeds each
+plan on the instance of its own corridor.
+
+**Testnet rent limitation (2026-10-25).** Testnet's Soroban state is above its target size, so rent
+on new ledger entries is steep. Creating a plan simulates at about **1,008 XLM for 3 installments and
+4,929 XLM for 24** on both instances, above the **429.5 XLM** one transaction can carry (the fee field
+is a uint32 of stroops). The services do not retry and do not spend: when `create_plan` is refused,
+a reset keeps the plan's existing chain plan if the instance still holds it (and shows it as it
+stands on chain), and otherwise runs the plan off chain, recorded in `demo_state.simulatedPlans` with
+the reason and logged by the server (`reset: plan-roxana: create_plan refused (...); the plan runs off
+chain, marked simulado`). Expected today: the Colombia plans seeded in earlier stages are kept, and every El Salvador plan
+runs off chain (none was ever created on the El Salvador instance). `POST /api/getDemoState` shows
+which (`chainPlans`, `simulatedPlans`). Do not run
+`npm run check:sv-testnet` expecting a plan: its `create_plan` is refused by simulation for the same
+reason (nothing is sent, nothing is spent).
+
+### `.env.testnet` keys added for El Salvador
+
+Names only; `deploy:sv` writes the values. Never commit or print the file.
+
+| Key | What |
+| --- | --- |
+| `PAYMENT_PLAN_CONTRACT_ID_SV` | El Salvador instance |
+| `PAYEE_BACKEND_SV_PUBLIC`, `PAYEE_BACKEND_SV_SECRET` | El Salvador payee (the release target) |
+| `INDEXER_START_LEDGER_SV` | first ledger the El Salvador indexer reads |
+| `BUYER_PUBLIC_ROXANA`, `BUYER_SECRET_ROXANA`, and the same for `MARVIN`, `DORIS`, `OSCAR` | demo buyer accounts |
+| `CHAIN_PLAN_ROXANA`, `CHAIN_PLAN_MARVIN`, `CHAIN_PLAN_DORIS`, `CHAIN_PLAN_OSCAR` | optional: chain plan ids, written only once a plan exists on chain (none today) |
+
+The indexer of the El Salvador instance keeps its data under `.data\indexer-sv`.
+
 ## Tests
 
 ```powershell
-npm test                      # services and web unit tests
+npm test                      # services and web unit tests, then npm run check:db
+npm run check:db              # applies every migration to PGlite (no Docker) and runs the RLS allow/deny cases
 npx vitest run --root infra/receiver
 npm run typecheck
 npm run test:e2e              # Playwright, mock mode (port 5173); $env:E2E_PORT=5175 first if another checkout's Vite holds 5173
