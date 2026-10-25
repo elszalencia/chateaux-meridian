@@ -3,7 +3,7 @@
 // refresh every screen). `run` wraps user actions with the same bookkeeping.
 
 import { useCallback, useEffect, useRef, useState, type DependencyList } from 'react';
-import { ApiError, MockProviderError } from '@casa-puente/services';
+import { ApiError, MockProviderError } from '@chateaux/services';
 
 export type AsyncStatus = 'idle' | 'loading' | 'success' | 'error';
 

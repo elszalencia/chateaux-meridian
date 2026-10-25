@@ -7,7 +7,7 @@
 // `showLockId={false}`; without those props the receipt renders exactly as before.
 
 import { useId, useState, type ReactNode } from 'react';
-import type { Receipt } from '@casa-puente/services';
+import type { Receipt } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { useT } from '../../app/i18n';
 import { Badge } from '../../components/ui';

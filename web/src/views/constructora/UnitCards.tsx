@@ -6,7 +6,7 @@
 // plain language and any money held or refunded, and "Novedades" lists the last three policy events
 // (every rule is still "política pendiente"; record-only events are marked as such).
 
-import type { PlanState, UnitSummary } from '@casa-puente/services';
+import type { PlanState, UnitSummary } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { useT } from '../../app/i18n';
 import { Badge, EmptyState, type Tone } from '../../components/ui';

@@ -1,7 +1,7 @@
 // What the buyer portal reads from the corridor config (config/corridors.ts). No component here
 // names a country: each decision below is one config field.
 
-import { CORRIDORS, addDays, type Corridor, type InstallmentView, type PlanView } from '@casa-puente/services';
+import { CORRIDORS, addDays, type Corridor, type InstallmentView, type PlanView } from '@chateaux/services';
 
 export function corridorOfView(view: PlanView): Corridor {
   return CORRIDORS[view.corridor];

@@ -2,7 +2,7 @@
 // not reach yet because the installment is not due (delivery to the seller on the due date) says
 // when it will happen instead of spinning.
 
-import type { PayStep } from '@casa-puente/services';
+import type { PayStep } from '@chateaux/services';
 import { useT } from '../../../app/i18n';
 import { SpinnerIcon } from '../../../components/ui';
 import { CheckIcon } from '../../../views/comprador/shared';

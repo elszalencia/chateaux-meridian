@@ -4,7 +4,7 @@
 // Spanish, which is longer than the calendar cells can hold), the rest follows the locale.
 
 import { useMemo } from 'react';
-import { parseISO } from '@casa-puente/services';
+import { parseISO } from '@chateaux/services';
 import { useI18n } from './i18n';
 
 export interface Formatters {

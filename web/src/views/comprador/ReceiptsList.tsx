@@ -2,7 +2,7 @@
 // own technical-details toggle. The list keeps its own loading / error / empty states so a failure
 // here never hides the calendar above it.
 
-import type { Receipt } from '@casa-puente/services';
+import type { Receipt } from '@chateaux/services';
 import type { AsyncState } from '../../app/hooks';
 import { useT } from '../../app/i18n';
 import { Card, EmptyState, ErrorState, Spinner } from '../../components/ui';

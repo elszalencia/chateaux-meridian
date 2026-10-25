@@ -4,7 +4,7 @@
 // apply, so an open cell reads short and a broken one explains itself. An unpaid or waived cell
 // says so in one sentence, with the next step, before the numbers.
 
-import { GRACE_BUSINESS_DAYS, type InstallmentView } from '@casa-puente/services';
+import { GRACE_BUSINESS_DAYS, type InstallmentView } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { useT } from '../../app/i18n';
 import { Badge, Button, Modal } from '../../components/ui';

@@ -2,7 +2,7 @@
 // forward points relative to spot, plus the source and as-of line so the presenter can say where
 // the numbers come from. Order follows the tenor ladder, not the order the API returns.
 
-import type { CurvePoint } from '@casa-puente/services';
+import type { CurvePoint } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { useT } from '../../app/i18n';
 import { Card } from '../../components/ui';

@@ -5,7 +5,7 @@
 // modal flows (installment card, lock, pay, pay ahead) are owned here so each can trigger a reload.
 
 import { useCallback, useEffect, useState } from 'react';
-import { DEFAULT_PLAN_BY_CORRIDOR, type LockQuote, type Tenor } from '@casa-puente/services';
+import { DEFAULT_PLAN_BY_CORRIDOR, type LockQuote, type Tenor } from '@chateaux/services';
 import { api } from '../../app/api';
 import { useDemo } from '../../app/demo';
 import { useAsync } from '../../app/hooks';

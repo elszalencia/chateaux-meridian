@@ -4,7 +4,7 @@
 // is not part of any product screen.
 
 import { useState } from 'react';
-import { CORRIDOR_IDS, DEFAULT_PLAN_BY_CORRIDOR } from '@casa-puente/services';
+import { CORRIDOR_IDS, DEFAULT_PLAN_BY_CORRIDOR } from '@chateaux/services';
 import { useDemo } from '../app/demo';
 import { useFormat } from '../app/format';
 import { useAsync } from '../app/hooks';

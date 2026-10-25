@@ -3,7 +3,7 @@
 // it opens; while the plan is on hold it points to the notice above. An open cash reference is
 // mentioned here too, so a buyer who comes back finds it without opening the sheet.
 
-import type { PlanView } from '@casa-puente/services';
+import type { PlanView } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { useT } from '../../app/i18n';
 import { Badge, Button, Card } from '../../components/ui';

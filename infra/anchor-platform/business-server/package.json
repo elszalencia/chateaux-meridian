@@ -1,5 +1,5 @@
 {
-  "name": "casa-puente-anchor-platform-business-server",
+  "name": "chateaux-anchor-platform-business-server",
   "private": true,
   "version": "0.1.0",
   "description": "Callback API (customer, rate, event) for the Anchor Platform receive-side demo anchor.",

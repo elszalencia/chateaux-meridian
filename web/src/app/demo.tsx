@@ -2,7 +2,7 @@
 // its load dependencies, so one click on the demo bar refreshes all three views.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { CorridorId, DemoState } from '@casa-puente/services';
+import type { CorridorId, DemoState } from '@chateaux/services';
 import { api, clearPersistedDemo } from './api';
 
 // Presenter corridor: picks which office views the nav lists and which buyer opens by default.

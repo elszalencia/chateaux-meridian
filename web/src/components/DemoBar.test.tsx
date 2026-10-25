@@ -2,13 +2,13 @@
 // moves the bar off "Colombia", and a manual switch moves the buyer view to that corridor's buyer.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import { DEFAULT_PLAN_BY_CORRIDOR, PLAN_ROXANA } from '@casa-puente/services';
+import { DEFAULT_PLAN_BY_CORRIDOR, PLAN_ROXANA } from '@chateaux/services';
 import CompradorPortal from '../portals/comprador/CompradorPortal';
 import { renderWithProviders } from '../portals/comprador/test-utils';
 import { DemoBar } from './DemoBar';
 
 vi.mock('../app/api', async () => {
-  const { createMockApi } = await import('@casa-puente/services');
+  const { createMockApi } = await import('@chateaux/services');
   return { api: createMockApi({ minDelayMs: 0, maxDelayMs: 0 }), clearPersistedDemo: () => undefined, DEMO_MODE: 'mock' };
 });
 

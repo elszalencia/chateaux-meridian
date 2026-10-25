@@ -5,7 +5,7 @@
 //   app/serviceClock.ts); `useSessionNow` remains only for the seller's cooling-off hours.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { svSeedClock, type ISODate, type Office } from '@casa-puente/services';
+import { svSeedClock, type ISODate, type Office } from '@chateaux/services';
 
 export const DEMO_CASHIER_ID = 'cajero-1';
 const OFFICE_KEY = 'chateaux-oficina-office';

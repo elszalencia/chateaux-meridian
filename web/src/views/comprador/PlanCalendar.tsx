@@ -4,7 +4,7 @@
 // Four bands per row on wide screens, two on tablets, one on phones. The adverse states (no pagada,
 // condonada) join the legend only when the plan has one, so a plan in good standing reads as before.
 
-import type { InstallmentView } from '@casa-puente/services';
+import type { InstallmentView } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { useT } from '../../app/i18n';
 import { Card } from '../../components/ui';

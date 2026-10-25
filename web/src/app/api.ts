@@ -5,7 +5,7 @@
 // - testnet: every call goes over HTTP to the Node server (services/server, localhost:8787, proxied
 //   by Vite under /api), which holds the Stellar keys. The page holds no key and no chain client.
 
-import { ApiError, createMockApi, type ApiErrorCode, type CasaPuenteApi, type PayStep, type Persistence, type Snapshot } from '@casa-puente/services';
+import { ApiError, createMockApi, type ApiErrorCode, type CasaPuenteApi, type PayStep, type Persistence, type Snapshot } from '@chateaux/services';
 
 const STORAGE_KEY = 'casa-puente-demo-v1';
 

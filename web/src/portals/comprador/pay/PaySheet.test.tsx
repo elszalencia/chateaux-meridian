@@ -4,7 +4,7 @@
 // reference; the counter shows the office and the phone to give; ACH runs the pay flow.
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { CORRIDORS, PLAN_DORIS, PLAN_ROXANA, type DemoApi, type PayOptionsView } from '@casa-puente/services';
+import { CORRIDORS, PLAN_DORIS, PLAN_ROXANA, type DemoApi, type PayOptionsView } from '@chateaux/services';
 import { freshApi, renderWithProviders } from '../test-utils';
 import { PaySheet } from './PaySheet';
 

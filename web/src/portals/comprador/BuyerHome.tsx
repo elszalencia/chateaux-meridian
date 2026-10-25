@@ -4,7 +4,7 @@
 // the pay sheet and the receipt open the same way from a message or from this screen.
 
 import { useState } from 'react';
-import { minorToMajor, type PayoutView, type PlanView, type Receipt } from '@casa-puente/services';
+import { minorToMajor, type PayoutView, type PlanView, type Receipt } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import type { AsyncState } from '../../app/hooks';
 import { useT } from '../../app/i18n';

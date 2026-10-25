@@ -2,7 +2,7 @@
 // status and a link that opens the full receipt (the same deep link the messages carry). Keeps its
 // own loading, error and empty states so a failure here never hides the calendar.
 
-import type { PayoutView, PlanView, Receipt } from '@casa-puente/services';
+import type { PayoutView, PlanView, Receipt } from '@chateaux/services';
 import type { AsyncState } from '../../app/hooks';
 import { useT } from '../../app/i18n';
 import { Button, Card, EmptyState, ErrorState, Spinner } from '../../components/ui';

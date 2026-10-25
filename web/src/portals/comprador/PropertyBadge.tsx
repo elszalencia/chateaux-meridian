@@ -2,7 +2,7 @@
 // with the date of the certificate checked. A lien registered on the unit, or a seller still in
 // verification, reads as "en revisión" instead. The registry feed is simulated, so it says so.
 
-import type { PlanView } from '@casa-puente/services';
+import type { PlanView } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { CheckIcon } from '../../views/comprador/shared';
 import { usePortalT } from './copy';

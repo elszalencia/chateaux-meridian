@@ -4,7 +4,7 @@
 // services would say.
 
 import { useEffect, useMemo, useState } from 'react';
-import type { PaymentView } from '@casa-puente/services';
+import type { PaymentView } from '@chateaux/services';
 
 /** The services' clock in ms, ticking every `tickMs` while `live`; null until something was read. */
 export function useServiceClock(now: string | null | undefined, { tickMs = 1000, live = true }: { tickMs?: number; live?: boolean } = {}): number | null {

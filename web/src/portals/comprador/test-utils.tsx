@@ -3,7 +3,7 @@
 
 import { render } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { createMockApi, type DemoApi } from '@casa-puente/services';
+import { createMockApi, type DemoApi } from '@chateaux/services';
 import { DemoProvider } from '../../app/demo';
 import { I18nProvider, type Lang } from '../../app/i18n';
 

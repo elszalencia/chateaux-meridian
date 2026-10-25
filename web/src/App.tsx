@@ -3,7 +3,7 @@
 // itself; views load what they need through the API and refresh on the demo `version`.
 
 import { Suspense, lazy } from 'react';
-import { CORRIDORS } from '@casa-puente/services';
+import { CORRIDORS } from '@chateaux/services';
 import { useDemo } from './app/demo';
 import { useI18n } from './app/i18n';
 import { useRoute, VIEWS } from './app/router';

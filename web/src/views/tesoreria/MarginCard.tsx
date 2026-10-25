@@ -3,7 +3,7 @@
 // as a plain positive number labelled as a cost (not a negative margin) to match how the
 // treasury team books them.
 
-import type { HedgeBookView, HedgeLegView } from '@casa-puente/services';
+import type { HedgeBookView, HedgeLegView } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { useT } from '../../app/i18n';
 import { Card } from '../../components/ui';

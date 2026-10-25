@@ -2,7 +2,7 @@
 // Corridors that keep the lock screens show the original receipt unchanged; the others show the
 // corridor's receipt fields with the delivery status.
 
-import type { PayoutView, PlanView, Receipt } from '@casa-puente/services';
+import type { PayoutView, PlanView, Receipt } from '@chateaux/services';
 import type { AsyncState } from '../../app/hooks';
 import { useT } from '../../app/i18n';
 import { Button, EmptyState, ErrorState, Modal, Spinner } from '../../components/ui';

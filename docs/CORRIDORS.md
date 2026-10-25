@@ -15,7 +15,7 @@ which business-day calendar sets grace and credit dates. Every plan belongs to o
 
 Both instances run the same Wasm. Everything that differs between corridors comes from one file,
 `config/corridors.ts`, which the services read through `corridorOf(plan)` and the web app reads
-through `@casa-puente/services`. No component or service branches on a country literal. The
+through `@chateaux/services`. No component or service branches on a country literal. The
 `corridors` table (migration `20261025120000_corridors_and_sv_schema.sql`) mirrors the same values
 for SQL readers; when the two disagree, `config/corridors.ts` is the source.
 

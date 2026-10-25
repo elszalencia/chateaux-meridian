@@ -5,7 +5,7 @@
 // (config `views`). Details open in drawers; only irreversible actions confirm in a modal.
 
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { CORRIDORS, type PlanRow } from '@casa-puente/services';
+import { CORRIDORS, type PlanRow } from '@chateaux/services';
 import { api } from '../../../app/api';
 import { useDemo } from '../../../app/demo';
 import { useAsync } from '../../../app/hooks';

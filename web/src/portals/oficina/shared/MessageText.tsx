@@ -3,7 +3,7 @@
 // name in plain words and its parameters as a short list, never the raw fallback body.
 
 import { Fragment } from 'react';
-import { isPlainBody, type OutboxMessage } from '@casa-puente/services';
+import { isPlainBody, type OutboxMessage } from '@chateaux/services';
 import { useFormat } from '../../../app/format';
 import { useT } from '../../../app/i18n';
 import { useOT } from './i18n';

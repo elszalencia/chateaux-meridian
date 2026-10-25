@@ -2,7 +2,7 @@
 // payout status, and the seller gate explained in plain words (why a release is held and what
 // clears it).
 
-import { ApiError, type PayoutStatus, type PlanDeskStatus, type SellerGateReason, type SellerVerificationStatus } from '@casa-puente/services';
+import { ApiError, type PayoutStatus, type PlanDeskStatus, type SellerGateReason, type SellerVerificationStatus } from '@chateaux/services';
 import { Badge, type Tone } from '../../../components/ui';
 import { useOT } from '../shared/i18n';
 

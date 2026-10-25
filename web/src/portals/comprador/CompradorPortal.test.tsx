@@ -4,7 +4,7 @@
 // details stay collapsed and are the only place the transaction reference appears.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { PLAN_DORIS, PLAN_MARIA, PLAN_ROXANA, type DemoApi } from '@casa-puente/services';
+import { PLAN_DORIS, PLAN_MARIA, PLAN_ROXANA, type DemoApi } from '@chateaux/services';
 import CompradorPortal from './CompradorPortal';
 import { freshApi, renderWithProviders } from './test-utils';
 

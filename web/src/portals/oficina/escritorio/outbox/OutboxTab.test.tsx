@@ -2,13 +2,13 @@
 // A message without template text shows the template's name and its parameters, not the raw body.
 import { describe, expect, it, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
-import { OFFICE_MAXI_WOODBRIDGE, PLAN_ROXANA } from '@casa-puente/services';
+import { OFFICE_MAXI_WOODBRIDGE, PLAN_ROXANA } from '@chateaux/services';
 import { renderOffice } from '../../shared/testing';
 import { OutboxTab } from './OutboxTab';
 import { api } from '../../../../app/api';
 
 vi.mock('../../../../app/api', async () => {
-  const { createMockApi } = await import('@casa-puente/services');
+  const { createMockApi } = await import('@chateaux/services');
   return { api: createMockApi({ minDelayMs: 0, maxDelayMs: 0 }), clearPersistedDemo: () => undefined, DEMO_MODE: 'mock' };
 });
 

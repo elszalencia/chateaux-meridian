@@ -2,7 +2,7 @@
 // it), its address and hours, the amount to bring, and the phone number to give the cashier so the
 // counter finds the plan. Nothing to confirm here: the cashier records the payment.
 
-import type { InstallmentView, PayOptionView, PlanView } from '@casa-puente/services';
+import type { InstallmentView, PayOptionView, PlanView } from '@chateaux/services';
 import { useFormat } from '../../../app/format';
 import { EmptyState } from '../../../components/ui';
 import { Row } from '../../../views/comprador/shared';

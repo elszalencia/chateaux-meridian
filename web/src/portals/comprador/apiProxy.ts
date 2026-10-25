@@ -2,7 +2,7 @@
 // has now, so each test swaps in its own stack and can spy on single methods of it. Kept free of
 // app imports so a `vi.mock` factory can load it.
 
-import type { DemoApi } from '@casa-puente/services';
+import type { DemoApi } from '@chateaux/services';
 
 /** A stand-in for the `api` export that forwards to whichever stack the holder has now. */
 export function apiProxy(holder: { api: DemoApi | null }): DemoApi {

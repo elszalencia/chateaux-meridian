@@ -5,7 +5,7 @@
 // term step with the expired-quote message; nothing is accepted automatically.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiError, type LockQuote, type Tenor } from '@casa-puente/services';
+import { ApiError, type LockQuote, type Tenor } from '@chateaux/services';
 import { api } from '../../app/api';
 import { useFormat } from '../../app/format';
 import { useAction } from '../../app/hooks';

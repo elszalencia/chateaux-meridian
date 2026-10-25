@@ -3,7 +3,7 @@
 // seller, the adverse-event actions and the WhatsApp history of this plan. The Colombia views open
 // from here only when the plan's corridor has them (config `views`).
 
-import { CORRIDORS, type InstallmentView, type OutboxMessage, type PaymentView, type PayoutView, type PlanView } from '@casa-puente/services';
+import { CORRIDORS, type InstallmentView, type OutboxMessage, type PaymentView, type PayoutView, type PlanView } from '@chateaux/services';
 import { api } from '../../../../app/api';
 import { useDemo, useFollowPlanCorridor } from '../../../../app/demo';
 import { useFormat } from '../../../../app/format';

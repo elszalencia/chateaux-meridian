@@ -2,7 +2,7 @@
 // where the current securing ends and the quarter on offer, and its button opens the lock flow
 // with "Trimestral" preselected. Nothing is renewed without the buyer pressing the button.
 
-import type { PlanView } from '@casa-puente/services';
+import type { PlanView } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { useT } from '../../app/i18n';
 import { Button } from '../../components/ui';

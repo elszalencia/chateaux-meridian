@@ -4,7 +4,7 @@
 // reference still pending at the cash network, and tells the cashier when the delivery to the seller
 // will wait for the seller's verification (the money is still taken and receipted).
 
-import { CORRIDORS, addDays, type CounterSearchResult, type Office } from '@casa-puente/services';
+import { CORRIDORS, addDays, type CounterSearchResult, type Office } from '@chateaux/services';
 import { api } from '../../../app/api';
 import { useDemo, useFollowPlanCorridor } from '../../../app/demo';
 import { useFormat } from '../../../app/format';

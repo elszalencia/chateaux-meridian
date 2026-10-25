@@ -3,7 +3,7 @@
 // the receipt in the sheet's done view. A failure keeps the steps with an inline error and a retry.
 
 import { useCallback, useState } from 'react';
-import type { InstallmentView, PayOptionView, PayStep, PlanView } from '@casa-puente/services';
+import type { InstallmentView, PayOptionView, PayStep, PlanView } from '@chateaux/services';
 import { api } from '../../../app/api';
 import { useFormat } from '../../../app/format';
 import { useAction } from '../../../app/hooks';

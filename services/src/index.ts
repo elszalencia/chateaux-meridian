@@ -1,4 +1,4 @@
-// Public surface of @casa-puente/services. The web app imports only from here.
+// Public surface of @chateaux/services. The web app imports only from here.
 export * from './domain/types';
 export * from './domain/dates';
 export * from './domain/holidays';

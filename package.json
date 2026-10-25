@@ -1,8 +1,8 @@
 {
-  "name": "casa-puente",
+  "name": "chateaux",
   "private": true,
   "version": "0.1.0",
-  "description": "Casa Puente: cross-border installment payments for Constructora Bolivar buyers abroad, on Stellar.",
+  "description": "Chateaux: cross-border installment payments for Constructora Bolivar buyers abroad, on Stellar.",
   "workspaces": [
     "services",
     "web"

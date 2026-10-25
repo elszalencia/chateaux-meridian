@@ -3,7 +3,7 @@
 // The delivery status reads the linked payout: held (with its reason), sent, in transit, credited,
 // delivered or failed; a receipt with no payout yet waits for the installment's due date.
 
-import type { InstallmentView, PayoutView, PlanView, Receipt, ReceiptField } from '@casa-puente/services';
+import type { InstallmentView, PayoutView, PlanView, Receipt, ReceiptField } from '@chateaux/services';
 import type { ReactNode } from 'react';
 import { useFormat } from '../../app/format';
 import { Badge, type Tone } from '../../components/ui';

@@ -7,7 +7,7 @@
 // Corridors that keep the lock screens pay by bank debit through the original pay flow.
 
 import { useCallback, useState } from 'react';
-import type { PayMethod, PayOptionView, PlanView } from '@casa-puente/services';
+import type { PayMethod, PayOptionView, PlanView } from '@chateaux/services';
 import { api } from '../../../app/api';
 import { useFormat } from '../../../app/format';
 import { useAsync } from '../../../app/hooks';

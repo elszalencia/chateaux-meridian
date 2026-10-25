@@ -4,7 +4,7 @@
 // case costs no tap. Names always list, since a partial name often matches several people.
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { CORRIDORS, digitsOf, type CounterSearchResult } from '@casa-puente/services';
+import { CORRIDORS, digitsOf, type CounterSearchResult } from '@chateaux/services';
 import { api } from '../../../app/api';
 import { useDemo } from '../../../app/demo';
 import { useT } from '../../../app/i18n';

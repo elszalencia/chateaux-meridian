@@ -4,7 +4,7 @@
 // an inline error and a retry; closing after success asks the parent to reload the plan.
 
 import { useCallback, useState } from 'react';
-import { ApiError, nextLockableIdxs, type PayStep, type PlanView, type Receipt } from '@casa-puente/services';
+import { ApiError, nextLockableIdxs, type PayStep, type PlanView, type Receipt } from '@chateaux/services';
 import { api } from '../../app/api';
 import { useFormat } from '../../app/format';
 import { useAction } from '../../app/hooks';

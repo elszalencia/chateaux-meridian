@@ -4,7 +4,7 @@
 // is exactly what a buyer would be quoted for a quarterly lock at that pass-through.
 
 import { useEffect, useRef, useState } from 'react';
-import { lockedRate, roundUsd, usdDue, type HedgeBookView } from '@casa-puente/services';
+import { lockedRate, roundUsd, usdDue, type HedgeBookView } from '@chateaux/services';
 import { useDemo } from '../../app/demo';
 import { useFormat } from '../../app/format';
 import { useAction } from '../../app/hooks';

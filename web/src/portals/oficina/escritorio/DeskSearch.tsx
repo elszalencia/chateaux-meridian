@@ -2,7 +2,7 @@
 // keys move through the matches, Enter opens the drawer, Esc clears the field.
 
 import { useId, useMemo, useState, type KeyboardEvent, type RefObject } from 'react';
-import { digitsOf, normalizeName, type PlanRow, type SellerView } from '@casa-puente/services';
+import { digitsOf, normalizeName, type PlanRow, type SellerView } from '@chateaux/services';
 import { useOT } from '../shared/i18n';
 
 type Hit = { kind: 'plan'; id: string; title: string; detail: string } | { kind: 'seller'; id: string; title: string; detail: string };

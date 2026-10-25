@@ -5,7 +5,7 @@
 // "Nueva referencia". The network is simulated, so completing the cash-in is a demo control here.
 
 import { useCallback, useEffect, useState } from 'react';
-import type { InstallmentView, PaymentView, PayOptionView, PayStep, PlanView, Receipt } from '@casa-puente/services';
+import type { InstallmentView, PaymentView, PayOptionView, PayStep, PlanView, Receipt } from '@chateaux/services';
 import { api } from '../../../app/api';
 import { useFormat } from '../../../app/format';
 import { useAction } from '../../../app/hooks';

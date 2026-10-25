@@ -1,7 +1,7 @@
 // Corridor resolution for the services: every reader of an amount, a holiday rule or a pay method
 // asks `corridorOf(plan)` first and never looks at a country literal. The configuration itself is
 // the repo-level config/corridors.ts, re-exported here so the web app reads it through
-// @casa-puente/services. `assertLocksEnabled` is the one guard every lock path runs before it
+// @chateaux/services. `assertLocksEnabled` is the one guard every lock path runs before it
 // touches a provider or the contract: a corridor without the FX leg never sees `apply_lock`.
 
 import { CORRIDORS, CORRIDOR_IDS, corridor, majorToMinor, minorToMajor, type Corridor, type CorridorId } from '../../../config/corridors';

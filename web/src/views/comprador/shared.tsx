@@ -4,7 +4,7 @@
 // plain text search over this folder, so the reference field is read by a name built at runtime.
 
 import type { ReactNode } from 'react';
-import type { CellState, Receipt } from '@casa-puente/services';
+import type { CellState, Receipt } from '@chateaux/services';
 import type { Tone } from '../../components/ui';
 
 export function Row({ label, value, hint, testId, mono }: { label: string; value: ReactNode; hint?: ReactNode; testId?: string; mono?: boolean }) {

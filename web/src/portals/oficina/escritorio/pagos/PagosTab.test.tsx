@@ -2,13 +2,13 @@
 // payouts in transit and in error visible with their details.
 import { describe, expect, it, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
-import { CORRIDORS } from '@casa-puente/services';
+import { CORRIDORS } from '@chateaux/services';
 import { renderOffice } from '../../shared/testing';
 import { PagosTab } from './PagosTab';
 import { api } from '../../../../app/api';
 
 vi.mock('../../../../app/api', async () => {
-  const { createMockApi } = await import('@casa-puente/services');
+  const { createMockApi } = await import('@chateaux/services');
   return { api: createMockApi({ minDelayMs: 0, maxDelayMs: 0 }), clearPersistedDemo: () => undefined, DEMO_MODE: 'mock' };
 });
 

@@ -1,7 +1,7 @@
 // Countdown to a reference's expiry on the services' session clock: the payment carries the
 // services' `now` from when it was read, and the page only adds the time elapsed since then.
 
-import type { PaymentView } from '@casa-puente/services';
+import type { PaymentView } from '@chateaux/services';
 import { useServiceClock } from '../../../app/serviceClock';
 
 /** Seconds left on a pending reference (null when it has no expiry); ticks once a second. */

@@ -3,7 +3,7 @@
 // then what to do next. Plan-level notices come first; the colour is amber for "act soon" and
 // neutral for "nothing to do yet", never red, and the words carry the meaning on their own.
 
-import type { BuyerNotice, PlanView } from '@casa-puente/services';
+import type { BuyerNotice, PlanView } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { useT } from '../../app/i18n';
 

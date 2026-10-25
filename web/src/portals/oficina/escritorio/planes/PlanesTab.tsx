@@ -3,7 +3,7 @@
 // is keyboard reachable without hijacking row clicks.
 
 import { useId, useMemo, useState, type ReactNode } from 'react';
-import { CORRIDOR_IDS, CORRIDORS, compareISO, type CorridorId, type PlanDeskStatus, type PlanRow } from '@casa-puente/services';
+import { CORRIDOR_IDS, CORRIDORS, compareISO, type CorridorId, type PlanDeskStatus, type PlanRow } from '@chateaux/services';
 import { useFormat } from '../../../../app/format';
 import { useT } from '../../../../app/i18n';
 import type { AsyncState } from '../../../../app/hooks';

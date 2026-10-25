@@ -2,7 +2,7 @@
 // for the close-out. The office can change between customers, never in the middle of a payment.
 
 import { useId } from 'react';
-import type { Office, Tender } from '@casa-puente/services';
+import type { Office, Tender } from '@chateaux/services';
 import { api } from '../../../app/api';
 import { useDemo } from '../../../app/demo';
 import { useFormat } from '../../../app/format';

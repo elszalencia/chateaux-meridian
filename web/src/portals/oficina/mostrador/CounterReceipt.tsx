@@ -3,7 +3,7 @@
 // back to an empty search. The ticket says when the money reaches the seller: on the due date for
 // an installment paid ahead, or that it was sent when the release already ran.
 
-import { CORRIDORS, type CounterSearchResult, type Office, type Payment, type Receipt } from '@casa-puente/services';
+import { CORRIDORS, type CounterSearchResult, type Office, type Payment, type Receipt } from '@chateaux/services';
 import { api } from '../../../app/api';
 import { useFormat } from '../../../app/format';
 import { useT } from '../../../app/i18n';

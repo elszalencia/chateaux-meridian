@@ -6,7 +6,7 @@
 // take); the office must serve the plan's corridor, compared by id, never by country name.
 
 import { useCallback, useState } from 'react';
-import type { CounterSearchResult, Payment, Receipt } from '@casa-puente/services';
+import type { CounterSearchResult, Payment, Receipt } from '@chateaux/services';
 import { api } from '../../../app/api';
 import { useDemo } from '../../../app/demo';
 import { useAsync } from '../../../app/hooks';

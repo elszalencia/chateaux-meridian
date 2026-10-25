@@ -4,7 +4,7 @@
 // long names live in `title` attributes and in a legend below. Numeric columns are right-aligned
 // with tabular digits; below 1440 px the table scrolls horizontally inside its card.
 
-import type { ReconRow, ReconStatus } from '@casa-puente/services';
+import type { ReconRow, ReconStatus } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { useT } from '../../app/i18n';
 import { Badge, EmptyState, type Tone } from '../../components/ui';

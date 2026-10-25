@@ -6,7 +6,7 @@
 // closing either one returns to the plan's home.
 
 import { useCallback } from 'react';
-import { DEFAULT_PLAN_BY_CORRIDOR } from '@casa-puente/services';
+import { DEFAULT_PLAN_BY_CORRIDOR } from '@chateaux/services';
 import { api } from '../../app/api';
 import { useDemo, useFollowPlanCorridor } from '../../app/demo';
 import { useAsync } from '../../app/hooks';

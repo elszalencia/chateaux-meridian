@@ -4,7 +4,7 @@
 // opens, so the demo clock advance has a visible effect. While the plan is on hold, in default or
 // cancelled, every money action is disabled and one line points to the notice that explains why.
 
-import { yearOf, type PlanView } from '@casa-puente/services';
+import { yearOf, type PlanView } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { useT } from '../../app/i18n';
 import { Badge, Button, Card, Stat } from '../../components/ui';

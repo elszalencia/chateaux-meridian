@@ -4,7 +4,7 @@
 // by the seller gate can be retried; when the gate still holds it, the typed reason is explained.
 
 import { useState } from 'react';
-import { CORRIDORS, type PayoutOption, type PayoutStatus, type PayoutView } from '@casa-puente/services';
+import { CORRIDORS, type PayoutOption, type PayoutStatus, type PayoutView } from '@chateaux/services';
 import { api } from '../../../../app/api';
 import { useDemo } from '../../../../app/demo';
 import { useFormat } from '../../../../app/format';

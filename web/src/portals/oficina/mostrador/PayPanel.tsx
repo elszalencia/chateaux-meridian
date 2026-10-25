@@ -3,7 +3,7 @@
 // cents. The counter has no cash ceiling: an amount above the cash network's limit is fine here.
 
 import { useId, useState } from 'react';
-import { CORRIDORS, type CounterSearchResult, type Office, type Payment, type Receipt, type Tender } from '@casa-puente/services';
+import { CORRIDORS, type CounterSearchResult, type Office, type Payment, type Receipt, type Tender } from '@chateaux/services';
 import { api } from '../../../app/api';
 import { useFormat } from '../../../app/format';
 import { useAction } from '../../../app/hooks';

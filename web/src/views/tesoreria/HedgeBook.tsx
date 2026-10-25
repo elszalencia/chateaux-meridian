@@ -5,7 +5,7 @@
 // width at 1440 px) and the booked trades list, so a quarter can be read top to bottom.
 
 import { useMemo, useState } from 'react';
-import { HEDGE_PROVIDER_LABEL, type HedgeBookView, type HedgeLegState, type HedgeQuarterView, type HedgeTrade } from '@casa-puente/services';
+import { HEDGE_PROVIDER_LABEL, type HedgeBookView, type HedgeLegState, type HedgeQuarterView, type HedgeTrade } from '@chateaux/services';
 import { api } from '../../app/api';
 import { useFormat } from '../../app/format';
 import { useAction } from '../../app/hooks';

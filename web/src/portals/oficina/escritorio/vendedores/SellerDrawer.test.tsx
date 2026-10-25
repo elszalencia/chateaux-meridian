@@ -7,7 +7,7 @@ import { SellerDrawer } from './SellerDrawer';
 import { api } from '../../../../app/api';
 
 vi.mock('../../../../app/api', async () => {
-  const { createMockApi } = await import('@casa-puente/services');
+  const { createMockApi } = await import('@chateaux/services');
   return { api: createMockApi({ minDelayMs: 0, maxDelayMs: 0 }), clearPersistedDemo: () => undefined, DEMO_MODE: 'mock' };
 });
 

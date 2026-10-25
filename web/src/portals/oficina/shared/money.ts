@@ -2,7 +2,7 @@
 // currency and minor-unit digits come from the plan's corridor config, never from a country check.
 
 import { useMemo } from 'react';
-import { CORRIDORS, minorToMajor, type CorridorId } from '@casa-puente/services';
+import { CORRIDORS, minorToMajor, type CorridorId } from '@chateaux/services';
 import { useFormat } from '../../../app/format';
 
 export interface Money {

@@ -5,7 +5,7 @@
 // in a modal; every other action runs from the drawer.
 
 import { useId, useState, type FormEvent } from 'react';
-import { CORRIDORS, PAYOUT_CHANGE_COOLING_OFF_HOURS, type PayoutAccount, type PlanRow, type SellerView } from '@casa-puente/services';
+import { CORRIDORS, PAYOUT_CHANGE_COOLING_OFF_HOURS, type PayoutAccount, type PlanRow, type SellerView } from '@chateaux/services';
 import { api } from '../../../../app/api';
 import { useDemo } from '../../../../app/demo';
 import { useFormat } from '../../../../app/format';

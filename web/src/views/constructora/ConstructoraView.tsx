@@ -4,7 +4,7 @@
 // and lets the empty states be exact. Loads refresh on the demo `version` (clock, reset, error mode).
 
 import { useMemo, useState } from 'react';
-import type { ReconStatus } from '@casa-puente/services';
+import type { ReconStatus } from '@chateaux/services';
 import { api } from '../../app/api';
 import { useDemo } from '../../app/demo';
 import { useAsync } from '../../app/hooks';

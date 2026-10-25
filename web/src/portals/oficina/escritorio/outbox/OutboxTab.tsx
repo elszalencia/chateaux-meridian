@@ -3,7 +3,7 @@
 // drawer reuses the list for one plan's history.
 
 import { useState } from 'react';
-import type { OutboxMessage, PlanRow } from '@casa-puente/services';
+import type { OutboxMessage, PlanRow } from '@chateaux/services';
 import { api } from '../../../../app/api';
 import { useDemo } from '../../../../app/demo';
 import { useFormat } from '../../../../app/format';

@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-// Vite serves the web app and transpiles the linked @casa-puente/services package from source,
+// Vite serves the web app and transpiles the linked @chateaux/services package from source,
 // so the domain layer never needs its own build step in Stage 1.
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
   envDir: path.resolve(import.meta.dirname, '..'),
   resolve: {
     alias: {
-      '@casa-puente/services': path.resolve(import.meta.dirname, '../services/src/index.ts'),
+      '@chateaux/services': path.resolve(import.meta.dirname, '../services/src/index.ts'),
     },
   },
   server: {

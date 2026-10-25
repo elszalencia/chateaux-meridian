@@ -2,7 +2,7 @@
 // next step (pay it, or open its receipt). Nothing about rates: the installment is already in the
 // currency the buyer pays.
 
-import type { InstallmentView, PlanView } from '@casa-puente/services';
+import type { InstallmentView, PlanView } from '@chateaux/services';
 import { useFormat } from '../../app/format';
 import { useT } from '../../app/i18n';
 import { Badge, Button, Modal } from '../../components/ui';

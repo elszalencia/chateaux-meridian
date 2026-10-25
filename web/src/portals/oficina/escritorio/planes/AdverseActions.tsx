@@ -4,7 +4,7 @@
 // are irreversible and confirm in a modal.
 
 import { useId, useState } from 'react';
-import { REASONS, type InstallmentView, type PlanView } from '@casa-puente/services';
+import { REASONS, type InstallmentView, type PlanView } from '@chateaux/services';
 import { api } from '../../../../app/api';
 import { useT } from '../../../../app/i18n';
 import { useAction } from '../../../../app/hooks';

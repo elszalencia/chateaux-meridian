@@ -3,7 +3,7 @@
 // opens the seller drawer.
 
 import { useMemo, useState } from 'react';
-import type { SellerTier, SellerVerificationStatus, SellerView } from '@casa-puente/services';
+import type { SellerTier, SellerVerificationStatus, SellerView } from '@chateaux/services';
 import type { AsyncState } from '../../../../app/hooks';
 import { Badge, Card, EmptyState, ErrorState, Spinner } from '../../../../components/ui';
 import { useOT } from '../../shared/i18n';
