@@ -1,4 +1,4 @@
-// ChainLockProvider: the LockProvider for testnet mode. Pricing stays Casa Puente's own (delegated
+// ChainLockProvider: the LockProvider for testnet mode. Pricing stays Chateaux's own (delegated
 // to the internal provider: engine + hedge curve); `apply` and `break` are `apply_lock` and
 // `break_lock` on the contract through the ChainBridge. DemoApi calls the bridge directly for
 // those two so the transaction hashes flow into receipts; this provider keeps the LockProvider

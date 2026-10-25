@@ -1,5 +1,5 @@
 //! El Salvador corridor probes, ported from the read-only scoping pass of 2026-10-25
-//! (_reference/casa-puente/session-reports/es-scope-probe.rs). The scope ran them against the Wasm
+//! (es-scope-probe.rs, in the scope's session reports under _reference/). The scope ran them against the Wasm
 //! fetched from testnet (`CAVPFFH4…CCTXP`, sha256 `a28d240c…`) through `contractimport!`; here they
 //! run against the crate as built from source, so they do not touch the Wasm and need no upload.
 //!

@@ -1,4 +1,4 @@
-// PolicyEngine: the seam where Casa Puente's business policy for adverse events will live. It looks
+// PolicyEngine: the seam where Chateaux's business policy for adverse events will live. It looks
 // at one plan's facts and answers two questions: which transitions to request today (or merely to
 // record), and how much of a held balance a refund should return. It never moves funds or writes
 // state itself; `runAdverseEventsDaily` executes its decisions through the GovernanceProvider.

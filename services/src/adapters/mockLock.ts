@@ -1,4 +1,4 @@
-// InternalLockProvider: Casa Puente's own lock pricing, built on the engine and the hedge curve.
+// InternalLockProvider: Chateaux's own lock pricing, built on the engine and the hedge curve.
 // An external lock provider (a later model) implements the same LockProvider interface and returns
 // its own rate; nothing above this layer changes. `apply` and `break` become `apply_lock` and
 // `break_lock` contract calls in Stage 2.

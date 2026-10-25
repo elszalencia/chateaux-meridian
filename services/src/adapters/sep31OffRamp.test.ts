@@ -109,7 +109,7 @@ function provider(shape: Shape, extra: Partial<ConstructorParameters<typeof Sep3
     homeUrl: HOME,
     senderSecret: Keypair.random().secret(),
     usdc: { code: 'USDC', issuer: ISSUER },
-    sender: { first_name: 'Casa', last_name: 'Puente', email_address: 'ops@example.com' },
+    sender: { first_name: 'Chateaux', last_name: 'Operaciones', email_address: 'ops@example.com' },
     fetchFn: anchor.fetchFn,
     pollIntervalMs: 1,
     sendPayment: async (args) => {
