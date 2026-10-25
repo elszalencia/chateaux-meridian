@@ -16,14 +16,14 @@ ANCHOR_QUOTE_SERVER = "http://localhost:8080/sep38"
 [DOCUMENTATION]
 ORG_NAME = "Ancla receptora simulada (Colombia) · Anchor Platform"
 ORG_URL = "http://localhost:8080"
-ORG_DESCRIPTION = "Simulated Colombian receiving anchor for the Casa Puente demo: receives test USDC on Stellar testnet and credits pesos to the buyer's encargo fiduciario at Fidudavivienda. Not a real financial institution."
+ORG_DESCRIPTION = "Simulated Colombian receiving anchor for the Chateaux demo: receives test USDC on Stellar testnet and credits pesos to the buyer's encargo fiduciario at Fidudavivienda. Not a real financial institution."
 
 [[CURRENCIES]]
 code = "USDC"
 issuer = "G...USDC_ISSUER"
 status = "test"
 is_asset_anchored = false
-desc = "Test USDC issued by the Casa Puente testnet issuer account (not Circle's USDC)."
+desc = "Test USDC issued by the Chateaux testnet issuer account (not Circle's USDC)."
 
 [[CURRENCIES]]
 code = "COP"

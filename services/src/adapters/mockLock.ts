@@ -11,7 +11,7 @@ import { priceLock, quoteExpiresAt } from '../lock/engine';
 const TENORS: ('1M' | '2M' | '3M')[] = ['1M', '2M', '3M'];
 
 export class InternalLockProvider implements LockProvider {
-  readonly name = 'Casa Puente (interno)';
+  readonly name = 'Chateaux (interno)';
 
   constructor(
     private readonly runtime: MockRuntime,

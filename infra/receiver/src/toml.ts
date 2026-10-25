@@ -25,7 +25,7 @@ export function stellarToml(cfg: ReceiverConfig): string {
     `issuer = "${cfg.usdcIssuer}"`,
     'status = "test"',
     'display_decimals = 2',
-    'name = "USDC de prueba (plataforma Casa Puente)"',
+    'name = "USDC de prueba (plataforma Chateaux)"',
     'desc = "Activo de prueba emitido por la plataforma en testnet; el ancla lo recibe y lo convierte a pesos."',
     '',
     '[[CURRENCIES]]',

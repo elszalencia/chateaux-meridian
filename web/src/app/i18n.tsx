@@ -64,7 +64,7 @@ interface I18nValue {
 }
 
 const I18nContext = createContext<I18nValue | null>(null);
-const LANG_KEY = 'casa-puente-lang';
+const LANG_KEY = 'chateaux-lang';
 
 function readLang(): Lang {
   try {

@@ -151,7 +151,7 @@ const baseConfig = (contractId: string): ChainClientConfig => ({
 let indexerStartLedger = fresh ? '' : existing.INDEXER_START_LEDGER || '';
 function writeEnv(contractId: string, chainPlans: Record<string, number>): void {
   const lines = [
-    '# Casa Puente testnet demo. Written by `npm run deploy:testnet`; gitignored (.env.*). Testnet only.',
+    '# Chateaux testnet demo. Written by `npm run deploy:testnet`; gitignored (.env.*). Testnet only.',
     '# Every key below is read by the Node server and the scripts only. VITE_DEMO_MODE is the one value',
     '# Vite exposes to the browser; `npm run check:bundle` fails if a secret ever reaches the bundle.',
     'VITE_DEMO_MODE=testnet',
@@ -297,7 +297,7 @@ writeEnv(contractId, chainPlans);
 
 // ---------- summary ----------
 console.log('');
-console.log('Casa Puente on Stellar testnet');
+console.log('Chateaux on Stellar testnet');
 const runningHash = (await deployedWasmHash(submitter, contractId)) ?? localHash;
 console.log(`  payment_plan contract  ${contractId} (schema ${await client.version()}, wasm ${runningHash.slice(0, 16)}…${runningHash !== localHash ? ', upgrade deferred' : ''})`);
 console.log(`                         ${explorerContractUrl(contractId)}`);

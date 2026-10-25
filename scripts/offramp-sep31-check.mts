@@ -73,7 +73,7 @@ async function main(): Promise<void> {
     usdc: { code: 'USDC', issuer },
     networkPassphrase,
     horizonUrl,
-    sender: { first_name: 'Casa Puente', last_name: 'Pagos', email_address: 'pagos@casapuente.test' },
+    sender: { first_name: 'Chateaux', last_name: 'Pagos', email_address: 'pagos@chateaux.test' },
     clockOffset: () => 0,
     pollIntervalMs: 2_000,
     log: (m) => log(`  ${m}`),

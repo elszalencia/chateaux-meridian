@@ -27,7 +27,7 @@ import {
   corridorIdOf,
   createTestnetStack,
   deployedWasmHash,
-  type CasaPuenteApi,
+  type ChateauxApi,
   type ChainBridge,
   type CorridorId,
   type DemoState,
@@ -48,7 +48,7 @@ import type { ServerConfig } from './config';
 import { FilePersistence } from './filePersistence';
 
 /** Sender of record for SEP-31 payouts: the platform remits on behalf of the buyer. */
-const SEP31_SENDER = { first_name: 'Casa Puente', last_name: 'S.A.S.', email_address: 'operaciones@casapuente.example' };
+const SEP31_SENDER = { first_name: 'Chateaux', last_name: 'S.A.S.', email_address: 'operaciones@chateaux.example' };
 
 export interface ServiceOptions {
   log?: (msg: string) => void;
@@ -249,7 +249,7 @@ export class TestnetService {
     };
   }
 
-  get api(): CasaPuenteApi {
+  get api(): ChateauxApi {
     return this.stack.api;
   }
 

@@ -13,10 +13,10 @@
 // /api to it in testnet mode, so the browser never needs a key or a CORS exception.
 
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { ApiError, type CasaPuenteApi, type PayStep } from '../../src/index';
+import { ApiError, type ChateauxApi, type PayStep } from '../../src/index';
 import type { TestnetService } from './service';
 
-/** The CasaPuenteApi methods the browser may call. New API methods are added here. */
+/** The ChateauxApi methods the browser may call. New API methods are added here. */
 export const API_METHODS = [
   'getDemoState',
   'listBuyers',
@@ -57,7 +57,7 @@ export const API_METHODS = [
   'retryPayout',
   'listOutbox',
   'runAdverseAction',
-] as const satisfies readonly (keyof CasaPuenteApi)[];
+] as const satisfies readonly (keyof ChateauxApi)[];
 
 const STREAMING = new Set<string>(['pay', 'payAhead', 'completeCashReference', 'takeCounterPayment']);
 const MAX_BODY = 1_000_000;
@@ -99,7 +99,7 @@ async function callApi(svc: TestnetService, method: string, args: unknown[], onP
     case 'completeCashReference':
       return svc.api.completeCashReference(String(args[0]), onProgress);
     case 'takeCounterPayment':
-      return svc.api.takeCounterPayment(args[0] as Parameters<CasaPuenteApi['takeCounterPayment']>[0], onProgress);
+      return svc.api.takeCounterPayment(args[0] as Parameters<ChateauxApi['takeCounterPayment']>[0], onProgress);
     case 'getReceipts':
       return svc.getReceipts(String(args[0]));
     case 'reset':

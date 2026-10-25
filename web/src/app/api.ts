@@ -5,9 +5,9 @@
 // - testnet: every call goes over HTTP to the Node server (services/server, localhost:8787, proxied
 //   by Vite under /api), which holds the Stellar keys. The page holds no key and no chain client.
 
-import { ApiError, createMockApi, type ApiErrorCode, type CasaPuenteApi, type PayStep, type Persistence, type Snapshot } from '@chateaux/services';
+import { ApiError, createMockApi, type ApiErrorCode, type ChateauxApi, type PayStep, type Persistence, type Snapshot } from '@chateaux/services';
 
-const STORAGE_KEY = 'casa-puente-demo-v1';
+const STORAGE_KEY = 'chateaux-demo-v1';
 
 const localPersistence: Persistence = {
   load() {
@@ -59,8 +59,8 @@ type ErrorBody = { error: { code: string; message: string } };
 
 const toApiError = (b: ErrorBody) => new ApiError(b.error.code as ApiErrorCode, b.error.message);
 
-/** CasaPuenteApi over HTTP: `POST /api/<method>` with `{args}`; pay/payAhead stream NDJSON progress. */
-export class HttpApi implements CasaPuenteApi {
+/** ChateauxApi over HTTP: `POST /api/<method>` with `{args}`; pay/payAhead stream NDJSON progress. */
+export class HttpApi implements ChateauxApi {
   constructor(private readonly base = '/api') {}
 
   private async call<T>(method: string, ...args: unknown[]): Promise<T> {
@@ -101,53 +101,53 @@ export class HttpApi implements CasaPuenteApi {
     }
   }
 
-  getDemoState: CasaPuenteApi['getDemoState'] = () => this.call('getDemoState');
-  listBuyers: CasaPuenteApi['listBuyers'] = () => this.call('listBuyers');
-  listPlans: CasaPuenteApi['listPlans'] = () => this.call('listPlans');
-  getPlan: CasaPuenteApi['getPlan'] = (planId) => this.call('getPlan', planId);
-  getReceipts: CasaPuenteApi['getReceipts'] = (planId) => this.call('getReceipts', planId);
-  getSpot: CasaPuenteApi['getSpot'] = () => this.call('getSpot');
-  quoteLock: CasaPuenteApi['quoteLock'] = (planId, tenor) => this.call('quoteLock', planId, tenor);
-  acceptLock: CasaPuenteApi['acceptLock'] = (lockId) => this.call('acceptLock', lockId);
-  pay: CasaPuenteApi['pay'] = (planId, idx, onProgress) => this.stream('pay', onProgress, planId, idx);
-  payAhead: CasaPuenteApi['payAhead'] = (planId, onProgress) => this.stream('payAhead', onProgress, planId);
-  getUnitSummaries: CasaPuenteApi['getUnitSummaries'] = () => this.call('getUnitSummaries');
-  getReconciliation: CasaPuenteApi['getReconciliation'] = (filter) => this.call('getReconciliation', filter);
-  getHedgeBook: CasaPuenteApi['getHedgeBook'] = () => this.call('getHedgeBook');
-  bookStrip: CasaPuenteApi['bookStrip'] = () => this.call('bookStrip');
-  setPassThrough: CasaPuenteApi['setPassThrough'] = (p) => this.call('setPassThrough', p);
-  advanceClock: CasaPuenteApi['advanceClock'] = (months) => this.call('advanceClock', months);
-  reset: CasaPuenteApi['reset'] = () => this.call('reset');
-  setErrorMode: CasaPuenteApi['setErrorMode'] = (on) => this.call('setErrorMode', on);
-  listOffices: CasaPuenteApi['listOffices'] = () => this.call('listOffices');
-  getPayOptions: CasaPuenteApi['getPayOptions'] = (planId, idx) => this.call('getPayOptions', planId, idx);
-  requestCashReference: CasaPuenteApi['requestCashReference'] = (planId, idx) => this.call('requestCashReference', planId, idx);
-  renewCashReference: CasaPuenteApi['renewCashReference'] = (paymentId) => this.call('renewCashReference', paymentId);
-  completeCashReference: CasaPuenteApi['completeCashReference'] = (paymentId, onProgress) => this.stream('completeCashReference', onProgress, paymentId);
-  getPayment: CasaPuenteApi['getPayment'] = (paymentId) => this.call('getPayment', paymentId);
-  listPayments: CasaPuenteApi['listPayments'] = (filter) => this.call('listPayments', filter);
-  searchBuyers: CasaPuenteApi['searchBuyers'] = (query) => this.call('searchBuyers', query);
-  takeCounterPayment: CasaPuenteApi['takeCounterPayment'] = (args, onProgress) => this.stream('takeCounterPayment', onProgress, args);
-  getShiftTotal: CasaPuenteApi['getShiftTotal'] = (args) => this.call('getShiftTotal', args);
-  sendReceiptMessage: CasaPuenteApi['sendReceiptMessage'] = (planId, idx) => this.call('sendReceiptMessage', planId, idx);
-  listPlanRows: CasaPuenteApi['listPlanRows'] = () => this.call('listPlanRows');
-  listSellers: CasaPuenteApi['listSellers'] = () => this.call('listSellers');
-  getSeller: CasaPuenteApi['getSeller'] = (sellerId) => this.call('getSeller', sellerId);
-  setSellerVerification: CasaPuenteApi['setSellerVerification'] = (sellerId, status, note) => this.call('setSellerVerification', sellerId, status, note);
-  changeSellerPayoutAccount: CasaPuenteApi['changeSellerPayoutAccount'] = (sellerId, account) => this.call('changeSellerPayoutAccount', sellerId, account);
-  raiseCnrAlert: CasaPuenteApi['raiseCnrAlert'] = (sellerId, unitId, detail) => this.call('raiseCnrAlert', sellerId, unitId, detail);
-  listPayouts: CasaPuenteApi['listPayouts'] = (filter) => this.call('listPayouts', filter);
-  retryPayout: CasaPuenteApi['retryPayout'] = (payoutId) => this.call('retryPayout', payoutId);
-  listOutbox: CasaPuenteApi['listOutbox'] = (planId) => this.call('listOutbox', planId);
-  runAdverseAction: CasaPuenteApi['runAdverseAction'] = (action, detail) => this.call('runAdverseAction', action, detail);
+  getDemoState: ChateauxApi['getDemoState'] = () => this.call('getDemoState');
+  listBuyers: ChateauxApi['listBuyers'] = () => this.call('listBuyers');
+  listPlans: ChateauxApi['listPlans'] = () => this.call('listPlans');
+  getPlan: ChateauxApi['getPlan'] = (planId) => this.call('getPlan', planId);
+  getReceipts: ChateauxApi['getReceipts'] = (planId) => this.call('getReceipts', planId);
+  getSpot: ChateauxApi['getSpot'] = () => this.call('getSpot');
+  quoteLock: ChateauxApi['quoteLock'] = (planId, tenor) => this.call('quoteLock', planId, tenor);
+  acceptLock: ChateauxApi['acceptLock'] = (lockId) => this.call('acceptLock', lockId);
+  pay: ChateauxApi['pay'] = (planId, idx, onProgress) => this.stream('pay', onProgress, planId, idx);
+  payAhead: ChateauxApi['payAhead'] = (planId, onProgress) => this.stream('payAhead', onProgress, planId);
+  getUnitSummaries: ChateauxApi['getUnitSummaries'] = () => this.call('getUnitSummaries');
+  getReconciliation: ChateauxApi['getReconciliation'] = (filter) => this.call('getReconciliation', filter);
+  getHedgeBook: ChateauxApi['getHedgeBook'] = () => this.call('getHedgeBook');
+  bookStrip: ChateauxApi['bookStrip'] = () => this.call('bookStrip');
+  setPassThrough: ChateauxApi['setPassThrough'] = (p) => this.call('setPassThrough', p);
+  advanceClock: ChateauxApi['advanceClock'] = (months) => this.call('advanceClock', months);
+  reset: ChateauxApi['reset'] = () => this.call('reset');
+  setErrorMode: ChateauxApi['setErrorMode'] = (on) => this.call('setErrorMode', on);
+  listOffices: ChateauxApi['listOffices'] = () => this.call('listOffices');
+  getPayOptions: ChateauxApi['getPayOptions'] = (planId, idx) => this.call('getPayOptions', planId, idx);
+  requestCashReference: ChateauxApi['requestCashReference'] = (planId, idx) => this.call('requestCashReference', planId, idx);
+  renewCashReference: ChateauxApi['renewCashReference'] = (paymentId) => this.call('renewCashReference', paymentId);
+  completeCashReference: ChateauxApi['completeCashReference'] = (paymentId, onProgress) => this.stream('completeCashReference', onProgress, paymentId);
+  getPayment: ChateauxApi['getPayment'] = (paymentId) => this.call('getPayment', paymentId);
+  listPayments: ChateauxApi['listPayments'] = (filter) => this.call('listPayments', filter);
+  searchBuyers: ChateauxApi['searchBuyers'] = (query) => this.call('searchBuyers', query);
+  takeCounterPayment: ChateauxApi['takeCounterPayment'] = (args, onProgress) => this.stream('takeCounterPayment', onProgress, args);
+  getShiftTotal: ChateauxApi['getShiftTotal'] = (args) => this.call('getShiftTotal', args);
+  sendReceiptMessage: ChateauxApi['sendReceiptMessage'] = (planId, idx) => this.call('sendReceiptMessage', planId, idx);
+  listPlanRows: ChateauxApi['listPlanRows'] = () => this.call('listPlanRows');
+  listSellers: ChateauxApi['listSellers'] = () => this.call('listSellers');
+  getSeller: ChateauxApi['getSeller'] = (sellerId) => this.call('getSeller', sellerId);
+  setSellerVerification: ChateauxApi['setSellerVerification'] = (sellerId, status, note) => this.call('setSellerVerification', sellerId, status, note);
+  changeSellerPayoutAccount: ChateauxApi['changeSellerPayoutAccount'] = (sellerId, account) => this.call('changeSellerPayoutAccount', sellerId, account);
+  raiseCnrAlert: ChateauxApi['raiseCnrAlert'] = (sellerId, unitId, detail) => this.call('raiseCnrAlert', sellerId, unitId, detail);
+  listPayouts: ChateauxApi['listPayouts'] = (filter) => this.call('listPayouts', filter);
+  retryPayout: ChateauxApi['retryPayout'] = (payoutId) => this.call('retryPayout', payoutId);
+  listOutbox: ChateauxApi['listOutbox'] = (planId) => this.call('listOutbox', planId);
+  runAdverseAction: ChateauxApi['runAdverseAction'] = (action, detail) => this.call('runAdverseAction', action, detail);
 }
 
-function buildApi(): CasaPuenteApi {
+function buildApi(): ChateauxApi {
   if (DEMO_MODE === 'testnet') return new HttpApi();
   return createMockApi({ persistence: localPersistence });
 }
 
-export const api: CasaPuenteApi = buildApi();
+export const api: ChateauxApi = buildApi();
 
 export function clearPersistedDemo(): void {
   localPersistence.clear();

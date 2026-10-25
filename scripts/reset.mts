@@ -9,7 +9,7 @@ const { state, elapsedMs } = await api.reset();
 const plan = await api.getPlan(PLAN_MARIA);
 const states = plan.installments.slice(0, 10).map((i) => `M${i.number}:${i.cellState}`).join(' ');
 
-console.log(`Casa Puente demo reset in ${elapsedMs} ms (limit: 10 000 ms)`);
+console.log(`Chateaux demo reset in ${elapsedMs} ms (limit: 10 000 ms)`);
 console.log(`today: ${state.today} · pass-through: ${state.passThrough * 100}% · seed ${state.seedVersion}`);
 console.log(`María / Oliva: ${states}`);
 console.log(`next payment: USD ${plan.summary.nextUsd} due ${plan.summary.nextDueDate}`);

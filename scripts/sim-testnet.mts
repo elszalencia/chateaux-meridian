@@ -264,7 +264,7 @@ else {
         usdc: { code: 'USDC', issuer: cfg.usdcIssuer },
         networkPassphrase: cfg.networkPassphrase,
         horizonUrl: cfg.horizonUrl,
-        sender: { first_name: 'Casa Puente', last_name: 'S.A.S.', email_address: 'operaciones@casapuente.example' },
+        sender: { first_name: 'Chateaux', last_name: 'S.A.S.', email_address: 'operaciones@chateaux.example' },
         log: (m) => log(`off-ramp: ${m}`),
       });
       const q = await off.quote({ usdc: (Number(LOCKED) / 1e7).toFixed(7) });

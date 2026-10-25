@@ -1,6 +1,6 @@
 // `npm run demo:testnet`: the testnet demo in one command.
 //  1. the simulated Colombian receiving anchor on :8788 (unless one already answers, or OFFRAMP=mock);
-//  2. the Casa Puente server on :8787, which holds every key (unless a testnet server already answers);
+//  2. the Chateaux server on :8787, which holds every key (unless a testnet server already answers);
 //  3. waits for the server's /health; when its startup check finds that the seeded plans were used
 //     by an earlier run, it re-seeds them with a reset (skip with --no-auto-reset);
 //  4. Vite in testnet mode on :5174, proxying /api to the server (--no-open to keep the browser closed).
@@ -109,7 +109,7 @@ try {
   const viteArgs = ['run', 'dev', '-w', 'web', '--', '--mode', 'testnet', '--port', WEB_PORT];
   if (!argv.has('--no-open')) viteArgs.push('--open');
   start('web', 'npm', viteArgs);
-  console.log(`Casa Puente testnet demo: http://localhost:${WEB_PORT} (API ${SERVER})`);
+  console.log(`Chateaux testnet demo: http://localhost:${WEB_PORT} (API ${SERVER})`);
 } catch (e) {
   console.error(e instanceof Error ? e.message : String(e));
   stopAll(1);

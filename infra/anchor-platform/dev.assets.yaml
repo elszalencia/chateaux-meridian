@@ -22,7 +22,7 @@ items:
         sender:
           types:
             sep31-sender:
-              description: Casa Puente sending backend acting for the buyer abroad
+              description: Chateaux sending backend acting for the buyer abroad
         receiver:
           types:
             sep31-receiver:

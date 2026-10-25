@@ -49,7 +49,7 @@ export {
 } from './seed/fixtures';
 export * from './policy';
 export * from './api/views';
-export { DemoApi, ApiError, type ApiErrorCode, type CasaPuenteApi, type ProgressFn } from './api/DemoApi';
+export { DemoApi, ApiError, type ApiErrorCode, type ChateauxApi, type ProgressFn } from './api/DemoApi';
 export { createMockApi, type CreateMockApiOptions } from './api/createMockApi';
 export { createTestnetApi, createTestnetStack, createApi, type CreateTestnetApiOptions, type CreateApiOptions, type DemoMode, type TestnetStack } from './api/createTestnetApi';
 export {

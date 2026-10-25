@@ -87,7 +87,7 @@ interface FxCharge {
   spotQuote: OffRampQuote | null;
 }
 
-export interface CasaPuenteApi {
+export interface ChateauxApi {
   getDemoState(): Promise<DemoState>;
   listBuyers(): Promise<Buyer[]>;
   listPlans(): Promise<{ plan: Plan; buyer: Buyer; unit: Unit }[]>;
@@ -176,7 +176,7 @@ export interface DemoApiOptions {
   log?: (msg: string) => void;
 }
 
-export class DemoApi implements CasaPuenteApi {
+export class DemoApi implements ChateauxApi {
   private readonly store: Store;
   private readonly providers: Providers;
   private readonly runtime: MockRuntime;

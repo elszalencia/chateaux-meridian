@@ -15,7 +15,7 @@ export interface PlanChainRef {
 }
 
 export class ChainLockProvider implements LockProvider {
-  readonly name = 'Casa Puente (testnet)';
+  readonly name = 'Chateaux (testnet)';
 
   constructor(
     private readonly pricing: LockProvider,

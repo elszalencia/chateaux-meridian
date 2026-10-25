@@ -89,7 +89,7 @@ const buyers: Buyer[] = [
     state: 'FL',
     phone: '+1 (305) 555-0142',
     email: 'maria.rojas@example.com',
-    stellarAccount: 'GBMARIAROJAS7DEMO3TESTNET5ACCOUNT2CASAPUENTE4OLIVA0142X',
+    stellarAccount: 'GBMARIAROJAS7DEMO3TESTNET5ACCOUNT2CHATEAUX4OLIVA0142X',
     anchorAuthMode: 'g_account',
   },
   {
@@ -99,7 +99,7 @@ const buyers: Buyer[] = [
     state: 'FL',
     phone: '+1 (407) 555-0188',
     email: 'andres.gomez@example.com',
-    stellarAccount: 'GBANDRESGOMEZ5DEMO3TESTNET5ACCOUNT2CASAPUENTE4TRIF0215XX',
+    stellarAccount: 'GBANDRESGOMEZ5DEMO3TESTNET5ACCOUNT2CHATEAUX4TRIF0215XX',
     anchorAuthMode: 'g_account',
   },
   {
@@ -109,7 +109,7 @@ const buyers: Buyer[] = [
     state: 'TX',
     phone: '+1 (713) 555-0126',
     email: 'camila.torres@example.com',
-    stellarAccount: 'GBCAMILATORRES7DEMO3TESTNET5ACCOUNT2CASAPUENTE4TRIF0287X',
+    stellarAccount: 'GBCAMILATORRES7DEMO3TESTNET5ACCOUNT2CHATEAUX4TRIF0287X',
     anchorAuthMode: 'g_account',
   },
   {
@@ -119,7 +119,7 @@ const buyers: Buyer[] = [
     state: 'NJ',
     phone: '+1 (973) 555-0156',
     email: 'luis.martinez@example.com',
-    stellarAccount: 'GBLUISMARTINEZ7DEMO3TESTNET5ACCOUNT2CASAPUENTE4OLIVA0156',
+    stellarAccount: 'GBLUISMARTINEZ7DEMO3TESTNET5ACCOUNT2CHATEAUX4OLIVA0156',
     anchorAuthMode: 'g_account',
   },
   {
@@ -129,7 +129,7 @@ const buyers: Buyer[] = [
     state: 'GA',
     phone: '+1 (404) 555-0171',
     email: 'paola.restrepo@example.com',
-    stellarAccount: 'GBPAOLARESTREPO7DEMO3TESTNET5ACCOUNT2CASAPUENTE4OLIVA0171',
+    stellarAccount: 'GBPAOLARESTREPO7DEMO3TESTNET5ACCOUNT2CHATEAUX4OLIVA0171',
     anchorAuthMode: 'g_account',
   },
   {
@@ -139,7 +139,7 @@ const buyers: Buyer[] = [
     state: 'NY',
     phone: '+1 (718) 555-0302',
     email: 'jorge.castano@example.com',
-    stellarAccount: 'GBJORGECASTANO7DEMO3TESTNET5ACCOUNT2CASAPUENTE4TRIF0302X',
+    stellarAccount: 'GBJORGECASTANO7DEMO3TESTNET5ACCOUNT2CHATEAUX4TRIF0302X',
     anchorAuthMode: 'g_account',
   },
   {
@@ -149,7 +149,7 @@ const buyers: Buyer[] = [
     state: 'IL',
     phone: '+1 (312) 555-0319',
     email: 'natalia.ospina@example.com',
-    stellarAccount: 'GBNATALIAOSPINA7DEMO3TESTNET5ACCOUNT2CASAPUENTE4TRIF0319X',
+    stellarAccount: 'GBNATALIAOSPINA7DEMO3TESTNET5ACCOUNT2CHATEAUX4TRIF0319X',
     anchorAuthMode: 'g_account',
   },
 ];
