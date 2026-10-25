@@ -1,0 +1,45 @@
+{
+  "$comment": "Shared lock-math vectors. locked_rate_fp = locked rate x 1e7 rounded half-up; usd_due_stroops = floor(cop_due x 1e14 / locked_rate_fp). Read by contracts/payment_plan tests and services/src/lock/engine.test.ts.",
+  "rate_scale": 10000000,
+  "usd_scale": 10000000,
+  "inputs": {
+    "spot": "3422.325",
+    "fwd_1m": "3442.145",
+    "fwd_2m": "3464.645",
+    "fwd_3m": "3492.795",
+    "pass_through": "0.5",
+    "cop_due": 4093125
+  },
+  "cases": [
+    {
+      "name": "quarterly",
+      "description": "Q lock: spot + 0.5 x (mean(1M,2M,3M) - spot)",
+      "rate_decimal": "3444.4266667",
+      "locked_rate_fp": 34444266667,
+      "cop_due": 4093125,
+      "usd_due_stroops": 11883327462,
+      "usd_due_display": "1188.33",
+      "cop_reconstructed": 4093124
+    },
+    {
+      "name": "monthly",
+      "description": "1M lock: spot + 0.5 x (1M - spot)",
+      "rate_decimal": "3432.2350000",
+      "locked_rate_fp": 34322350000,
+      "cop_due": 4093125,
+      "usd_due_stroops": 11925538315,
+      "usd_due_display": "1192.55",
+      "cop_reconstructed": 4093124
+    },
+    {
+      "name": "spot",
+      "description": "unlocked payment at spot",
+      "rate_decimal": "3422.3250000",
+      "locked_rate_fp": 34223250000,
+      "cop_due": 4093125,
+      "usd_due_stroops": 11960071004,
+      "usd_due_display": "1196.01",
+      "cop_reconstructed": 4093124
+    }
+  ]
+}

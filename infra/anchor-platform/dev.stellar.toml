@@ -1,0 +1,34 @@
+# SEP-1 info file served by sep-server at http://localhost:8080/.well-known/stellar.toml.
+# Testnet only. Placeholders (G...) are public keys, filled by hand before the first run:
+# SIGNING_KEY must be the public key of SECRET_SEP10_SIGNING_SEED in dev.env, and ACCOUNTS lists
+# the distribution account that also appears in dev.assets.yaml.
+
+ACCOUNTS = ["G...DISTRIBUTION"]
+VERSION = "2.0.0"
+NETWORK_PASSPHRASE = "Test SDF Network ; September 2015"
+SIGNING_KEY = "G...SIGNING_KEY"
+
+WEB_AUTH_ENDPOINT = "http://localhost:8080/auth"
+KYC_SERVER = "http://localhost:8080/sep12"
+DIRECT_PAYMENT_SERVER = "http://localhost:8080/sep31"
+ANCHOR_QUOTE_SERVER = "http://localhost:8080/sep38"
+
+[DOCUMENTATION]
+ORG_NAME = "Ancla receptora simulada (Colombia) · Anchor Platform"
+ORG_URL = "http://localhost:8080"
+ORG_DESCRIPTION = "Simulated Colombian receiving anchor for the Casa Puente demo: receives test USDC on Stellar testnet and credits pesos to the buyer's encargo fiduciario at Fidudavivienda. Not a real financial institution."
+
+[[CURRENCIES]]
+code = "USDC"
+issuer = "G...USDC_ISSUER"
+status = "test"
+is_asset_anchored = false
+desc = "Test USDC issued by the Casa Puente testnet issuer account (not Circle's USDC)."
+
+[[CURRENCIES]]
+code = "COP"
+status = "test"
+is_asset_anchored = true
+anchor_asset_type = "fiat"
+anchor_asset = "iso4217:COP"
+desc = "Colombian pesos paid into the buyer's encargo fiduciario at Fidudavivienda (demo)."

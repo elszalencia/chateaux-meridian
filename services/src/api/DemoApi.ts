@@ -1,0 +1,798 @@
+// DemoApi: the single façade the web app talks to. It owns the orchestration (quote → accept → hedge
+// legs; pay → on-ramp → off-ramp → settlement → receipt; clock jobs; reset) on top of a Store and the
+// four providers. Stage 2 and 3 keep this class and swap the providers; the Supabase layer swaps the
+// Store. Nothing here imports a UI framework.
+
+import type {
+  Buyer,
+  DemoState,
+  HedgeBookView,
+  HedgeLeg,
+  HedgeTrade,
+  Installment,
+  ISODate,
+  Lock,
+  LockQuote,
+  PayStep,
+  Plan,
+  PlanView,
+  Receipt,
+  ReconRow,
+  RenewalOffer,
+  Tenor,
+  Unit,
+  UnitSummary,
+} from '../domain/types';
+import { addMonths, compareISO, nowISO } from '../domain/dates';
+import {
+  GRACE_BUSINESS_DAYS,
+  acceptanceCutoffDate,
+  breakCost,
+  fixedPointRate,
+  graceEndDate,
+  isBeforeCutoff,
+  isBeyondGrace,
+  isQuoteExpired,
+  nextLockableIdxs,
+  roundCop,
+  roundUsd,
+  shouldOfferRenewal,
+  usdDue,
+  usdToCoverCop,
+} from '../lock/engine';
+import type { OffRampQuote, OffRampQuoteRequest, Providers } from '../adapters/interfaces';
+import { MockRuntime, curveAtOffset, spotAtOffset } from '../adapters/mockRuntime';
+import type { Store } from '../store/Store';
+import { ADVERSE_DEMO_PLANS, buildSeed, makeReceipt } from '../seed/fixtures';
+import { fundsAllowed } from '../policy/transitions';
+import { buildHedgeBook, buildPlanView, buildReconRows, buildUnitSummaries } from './views';
+import { demoLockExpiryTs, lockIdBytes, lockedStroops, usdToStroops, type ChainBridge } from '../chain/bridge';
+import { ChainError } from '../chain/submit';
+
+export type ApiErrorCode =
+  | 'NOT_FOUND'
+  | 'NO_LOCKABLE'
+  | 'CUTOFF'
+  | 'NOT_QUOTED'
+  | 'QUOTE_EXPIRED'
+  | 'ALREADY_PAID'
+  | 'NOTHING_TO_BOOK'
+  | 'NOTHING_TO_PAY_AHEAD'
+  | 'PLAN_BLOCKED'
+  | 'INSTALLMENT_MISSED'
+  | 'PROVIDER';
+
+export class ApiError extends Error {
+  constructor(public readonly code: ApiErrorCode, message?: string, public readonly cause?: unknown) {
+    super(message ?? code);
+    this.name = 'ApiError';
+  }
+}
+
+export type ProgressFn = (completedStep: PayStep) => void;
+
+export interface CasaPuenteApi {
+  getDemoState(): Promise<DemoState>;
+  listBuyers(): Promise<Buyer[]>;
+  listPlans(): Promise<{ plan: Plan; buyer: Buyer; unit: Unit }[]>;
+  getPlan(planId: string): Promise<PlanView>;
+  getReceipts(planId: string): Promise<Receipt[]>;
+  getSpot(): Promise<{ rate: number; asOf: ISODate }>;
+  quoteLock(planId: string, tenor: Tenor): Promise<LockQuote>;
+  acceptLock(lockId: string): Promise<PlanView>;
+  pay(planId: string, idx: number, onProgress?: ProgressFn): Promise<Receipt>;
+  payAhead(planId: string, onProgress?: ProgressFn): Promise<Receipt[]>;
+  getUnitSummaries(): Promise<UnitSummary[]>;
+  getReconciliation(filter?: { project?: string }): Promise<ReconRow[]>;
+  getHedgeBook(): Promise<HedgeBookView>;
+  bookStrip(): Promise<HedgeTrade[]>;
+  setPassThrough(passThrough: number): Promise<DemoState>;
+  advanceClock(months?: number): Promise<DemoState>;
+  reset(): Promise<{ state: DemoState; elapsedMs: number }>;
+  setErrorMode(on: boolean): Promise<DemoState>;
+}
+
+export interface DemoApiOptions {
+  store: Store;
+  providers: Providers;
+  runtime: MockRuntime;
+  now?: () => number;
+  /**
+   * Testnet mode only: mirrors locks, deposits, releases and breaks on the payment_plan contract.
+   * Undefined in mock mode, where every path below behaves exactly as in Stage 1.
+   */
+  chain?: ChainBridge;
+}
+
+export class DemoApi implements CasaPuenteApi {
+  private readonly store: Store;
+  private readonly providers: Providers;
+  private readonly runtime: MockRuntime;
+  private readonly now: () => number;
+  private readonly chain: ChainBridge | undefined;
+  private offset = 0;
+
+  constructor(opts: DemoApiOptions) {
+    this.store = opts.store;
+    this.providers = opts.providers;
+    this.runtime = opts.runtime;
+    this.now = opts.now ?? (() => Date.now());
+    this.chain = opts.chain;
+    this.runtime.clockOffset = () => this.offset;
+  }
+
+  // ---------- chain helpers (testnet mode) ----------
+
+  private async chainPlanId(planId: string): Promise<number> {
+    const s = await this.state();
+    const id = s.chainPlans?.[planId];
+    if (id == null) throw new ApiError('PROVIDER', `plan ${planId} is not seeded on chain; run "Reiniciar demo"`);
+    return id;
+  }
+
+  /** Runs a chain call and turns any failure into the PROVIDER error the UI knows how to show. */
+  private async onChain<T>(what: string, run: () => Promise<T>): Promise<T> {
+    try {
+      return await run();
+    } catch (e) {
+      if (e instanceof ApiError) throw e;
+      const detail = e instanceof ChainError ? e.message : e instanceof Error ? e.message : String(e);
+      throw new ApiError('PROVIDER', `${what}: ${detail}`, e);
+    }
+  }
+
+  /** Stroops a payment moves on chain: the contract's own amount for a locked row, the paid USD otherwise. */
+  private static stroopsFor(row: Installment, locked: boolean, usdPaid: number): bigint {
+    return locked && row.lockedRate != null ? lockedStroops(row.copDue, row.lockedRate) : usdToStroops(usdPaid);
+  }
+
+  // ---------- state helpers ----------
+
+  private async state(): Promise<DemoState> {
+    const s = await this.store.get('demo_state', 'singleton');
+    if (!s) throw new ApiError('NOT_FOUND', 'demo_state missing; run reset');
+    this.offset = s.clockOffsetMonths;
+    this.runtime.errorMode = s.errorMode;
+    return s;
+  }
+
+  private async saveState(patch: Partial<DemoState>): Promise<DemoState> {
+    const s = { ...(await this.state()), ...patch };
+    await this.store.upsert('demo_state', s);
+    this.offset = s.clockOffsetMonths;
+    this.runtime.errorMode = s.errorMode;
+    return s;
+  }
+
+  private spot(): number {
+    return spotAtOffset(this.offset);
+  }
+
+  // Timestamps written by the demo carry the demo date (which "+1 mes" moves) and the wall-clock
+  // time of day, so receipts and settlements line up with the calendar the user is looking at.
+  private async demoTimestamp(): Promise<string> {
+    const s = await this.state();
+    const wall = new Date(this.now()).toISOString();
+    return `${s.today}T${wall.slice(11)}`;
+  }
+
+  private async guardedRead(op: string): Promise<DemoState> {
+    const s = await this.state();
+    this.runtime.guard(op);
+    await this.runtime.delay(0.4);
+    return s;
+  }
+
+  private async planBundle(planId: string): Promise<{ plan: Plan; buyer: Buyer; unit: Unit; installments: Installment[] }> {
+    const plan = await this.store.get('plans', planId);
+    if (!plan) throw new ApiError('NOT_FOUND', `plan ${planId}`);
+    const buyer = await this.store.get('buyers', plan.buyerId);
+    const unit = await this.store.get('units', plan.unitId);
+    if (!buyer || !unit) throw new ApiError('NOT_FOUND', `buyer/unit for ${planId}`);
+    const installments = (await this.store.all('installments')).filter((i) => i.planId === planId).sort((a, b) => a.idx - b.idx);
+    return { plan, buyer, unit, installments };
+  }
+
+  private async viewOf(planId: string, s: DemoState): Promise<PlanView> {
+    const b = await this.planBundle(planId);
+    return buildPlanView({
+      ...b,
+      locks: await this.store.all('locks'),
+      offers: await this.store.all('renewal_offers'),
+      today: s.today,
+      spot: this.spot(),
+      passThrough: s.passThrough,
+      governance: await this.store.get('plan_governance', planId),
+      events: await this.store.all('policy_events'),
+    });
+  }
+
+  /** Deposits, locks and payments are refused while the plan is on hold, defaulted, cancelled or completed. */
+  private async assertFundsAllowed(planId: string): Promise<void> {
+    const gov = await this.store.get('plan_governance', planId);
+    if (gov && !fundsAllowed(gov.state)) throw new ApiError('PLAN_BLOCKED', `plan is ${gov.state}`);
+  }
+
+  // ---------- reads ----------
+
+  async getDemoState(): Promise<DemoState> {
+    return this.state();
+  }
+
+  async listBuyers(): Promise<Buyer[]> {
+    await this.guardedRead('listBuyers');
+    return this.store.all('buyers');
+  }
+
+  async listPlans(): Promise<{ plan: Plan; buyer: Buyer; unit: Unit }[]> {
+    await this.guardedRead('listPlans');
+    const [plans, buyers, units] = await Promise.all([this.store.all('plans'), this.store.all('buyers'), this.store.all('units')]);
+    return plans.map((plan) => ({ plan, buyer: buyers.find((b) => b.id === plan.buyerId)!, unit: units.find((u) => u.id === plan.unitId)! }));
+  }
+
+  async getPlan(planId: string): Promise<PlanView> {
+    const s = await this.guardedRead('getPlan');
+    return this.viewOf(planId, s);
+  }
+
+  async getReceipts(planId: string): Promise<Receipt[]> {
+    await this.guardedRead('getReceipts');
+    return (await this.store.all('receipts')).filter((r) => r.planId === planId).sort((a, b) => b.paidAt.localeCompare(a.paidAt));
+  }
+
+  async getSpot(): Promise<{ rate: number; asOf: ISODate }> {
+    const s = await this.guardedRead('getSpot');
+    return { rate: this.spot(), asOf: s.today };
+  }
+
+  async getUnitSummaries(): Promise<UnitSummary[]> {
+    const s = await this.guardedRead('getUnitSummaries');
+    return buildUnitSummaries({
+      plans: await this.store.all('plans'),
+      buyers: await this.store.all('buyers'),
+      units: await this.store.all('units'),
+      installments: await this.store.all('installments'),
+      today: s.today,
+      governance: await this.store.all('plan_governance'),
+      events: await this.store.all('policy_events'),
+    });
+  }
+
+  async getReconciliation(filter?: { project?: string }): Promise<ReconRow[]> {
+    await this.guardedRead('getReconciliation');
+    const rows = buildReconRows({
+      receipts: await this.store.all('receipts'),
+      plans: await this.store.all('plans'),
+      buyers: await this.store.all('buyers'),
+      units: await this.store.all('units'),
+      installments: await this.store.all('installments'),
+    });
+    return filter?.project ? rows.filter((r) => r.project === filter.project) : rows;
+  }
+
+  async getHedgeBook(): Promise<HedgeBookView> {
+    const s = await this.guardedRead('getHedgeBook');
+    return buildHedgeBook({
+      legs: await this.store.all('hedge_legs'),
+      trades: await this.store.all('hedge_trades'),
+      locks: await this.store.all('locks'),
+      plans: await this.store.all('plans'),
+      buyers: await this.store.all('buyers'),
+      curve: curveAtOffset(this.offset, s.baseDate),
+      passThrough: s.passThrough,
+      today: s.today,
+    });
+  }
+
+  // ---------- lock flow ----------
+
+  async quoteLock(planId: string, tenor: Tenor): Promise<LockQuote> {
+    const s = await this.state();
+    this.runtime.guard('quoteLock');
+    const { plan, installments } = await this.planBundle(planId);
+    await this.assertFundsAllowed(planId);
+    const idxs = nextLockableIdxs(installments, tenor);
+    if (!idxs) throw new ApiError('NO_LOCKABLE', 'no consecutive open installments for this tenor');
+    const rows = idxs.map((i) => installments[i]!);
+    const firstDue = rows[0]!.dueDate;
+    if (!isBeforeCutoff(s.today, firstDue)) throw new ApiError('CUTOFF', `cutoff ${acceptanceCutoffDate(firstDue)} passed`);
+
+    // Any earlier unaccepted quote for this plan expires now.
+    const previous = (await this.store.all('locks')).filter((l) => l.planId === planId && l.state === 'cotizado');
+    for (const l of previous) await this.store.upsert('locks', { ...l, state: 'vencido' });
+
+    let q;
+    try {
+      q = await this.providers.lock.quote({
+        planId,
+        tenor,
+        idxs,
+        copDues: rows.map((r) => r.copDue),
+        dueDates: rows.map((r) => r.dueDate),
+        passThrough: s.passThrough,
+      });
+    } catch (e) {
+      throw new ApiError('PROVIDER', 'lock provider failed', e);
+    }
+    const lock: Lock = {
+      id: `lock-${planId}-${idxs[0]}-${this.now().toString(36)}`,
+      planId,
+      tenor,
+      idxs,
+      spot: q.spot,
+      fwdRates: q.fwdRates,
+      avgFwd: q.avgFwd,
+      points: q.points,
+      passThrough: s.passThrough,
+      lockedRate: q.lockedRate,
+      usdPerInstallment: q.usdPerInstallment,
+      quoteExpiresAt: q.quoteExpiresAt,
+      createdAt: new Date(this.now()).toISOString(),
+      acceptedAt: null,
+      state: 'cotizado',
+      brokenIdx: null,
+      breakCostCop: null,
+      curveAsOf: q.curveAsOf,
+    };
+    await this.store.upsert('locks', lock);
+    const usdAtSpot = rows.map((r) => roundUsd(usdDue(r.copDue, q.spot)));
+    void plan;
+    return {
+      lock,
+      idxs,
+      installments: rows.map((r, k) => ({ idx: r.idx, number: r.idx + 1, dueDate: r.dueDate, copDue: r.copDue, usdDue: q.usdPerInstallment[k]!, usdAtSpot: usdAtSpot[k]! })),
+      usdPerInstallment: q.usdPerInstallment[0]!,
+      usdTotal: roundUsd(q.usdPerInstallment.reduce((a, b) => a + b, 0)),
+      copTotal: rows.reduce((a, r) => a + r.copDue, 0),
+      usdAtSpotTotal: roundUsd(usdAtSpot.reduce((a, b) => a + b, 0)),
+      spot: q.spot,
+      lockedRate: q.lockedRate,
+      quoteExpiresAt: q.quoteExpiresAt,
+      cutoffDate: acceptanceCutoffDate(firstDue),
+      graceBusinessDays: GRACE_BUSINESS_DAYS,
+    };
+  }
+
+  async acceptLock(lockId: string): Promise<PlanView> {
+    const s = await this.state();
+    this.runtime.guard('acceptLock');
+    const lock = await this.store.get('locks', lockId);
+    if (!lock) throw new ApiError('NOT_FOUND', `lock ${lockId}`);
+    if (lock.state !== 'cotizado') throw new ApiError('NOT_QUOTED', `lock is ${lock.state}`);
+    if (isQuoteExpired(lock.quoteExpiresAt, this.now())) {
+      await this.store.upsert('locks', { ...lock, state: 'vencido' });
+      throw new ApiError('QUOTE_EXPIRED');
+    }
+    const { installments } = await this.planBundle(lock.planId);
+    await this.assertFundsAllowed(lock.planId);
+    const rows = lock.idxs.map((i) => installments[i]!);
+    if (rows.some((r) => r.status !== 'open')) throw new ApiError('NO_LOCKABLE', 'an installment is no longer open');
+
+    if (this.chain) {
+      // Testnet: apply_lock with the fixed-point rate the contract stores and the compressed
+      // expiry of the demo time model (services/src/chain/bridge.ts).
+      const chain = this.chain;
+      const { plan } = await this.planBundle(lock.planId);
+      const chainPlanId = await this.chainPlanId(lock.planId);
+      await this.onChain('apply_lock', () =>
+        chain.applyLock({
+          chainPlanId,
+          buyerId: plan.buyerId,
+          idxs: lock.idxs,
+          lockId: lockIdBytes(lockId),
+          lockedRate: fixedPointRate(lock.lockedRate),
+          expiryTs: demoLockExpiryTs(this.now()),
+        }),
+      );
+    } else {
+      try {
+        await this.providers.lock.apply({
+          lockId,
+          planId: lock.planId,
+          idxs: lock.idxs,
+          lockedRate: lock.lockedRate,
+          expiryTs: graceEndDate(rows[rows.length - 1]!.dueDate),
+        });
+      } catch (e) {
+        throw new ApiError('PROVIDER', 'lock provider failed', e);
+      }
+    }
+
+    const acceptedAt = new Date(this.now()).toISOString();
+    await this.store.upsertMany(
+      'installments',
+      rows.map((r, k) => ({
+        ...r,
+        status: 'locked' as const,
+        lockId,
+        lockedRate: lock.lockedRate,
+        usdDue: lock.usdPerInstallment[k]!,
+        lockExpiry: graceEndDate(r.dueDate),
+      })),
+    );
+    await this.store.upsert('locks', { ...lock, state: 'activo', acceptedAt });
+    await this.store.upsertMany(
+      'hedge_legs',
+      rows.map(
+        (r, k): HedgeLeg => ({
+          id: `leg-${lockId}-${r.idx}`,
+          lockId,
+          planId: lock.planId,
+          installmentIdx: r.idx,
+          dueDate: r.dueDate,
+          usdNotional: usdDue(r.copDue, lock.lockedRate),
+          lockedRate: lock.lockedRate,
+          fwdRate: lock.fwdRates[k]!,
+          tradeId: null,
+          bookedAt: null,
+          settledCop: null,
+          fixing: null,
+          settledAt: null,
+          state: 'pendiente',
+        }),
+      ),
+    );
+    const offers = (await this.store.all('renewal_offers')).filter((o) => o.planId === lock.planId && o.state === 'ofrecido' && o.idxs.some((i) => lock.idxs.includes(i)));
+    for (const o of offers) await this.store.upsert('renewal_offers', { ...o, state: 'aceptado' });
+    return this.viewOf(lock.planId, s);
+  }
+
+  // ---------- pay flow ----------
+
+  async pay(planId: string, idx: number, onProgress?: ProgressFn): Promise<Receipt> {
+    const s = await this.state();
+    this.runtime.guard('pay');
+    const { plan, installments } = await this.planBundle(planId);
+    const row = installments[idx];
+    if (!row) throw new ApiError('NOT_FOUND', `installment ${idx}`);
+    if (row.status === 'released') throw new ApiError('ALREADY_PAID');
+    await this.assertFundsAllowed(planId);
+    if (row.status === 'missed' || row.status === 'waived') throw new ApiError('INSTALLMENT_MISSED', `installment is ${row.status}`);
+
+    const locked = row.status === 'locked' && row.usdDue != null && row.lockedRate != null;
+    const breakCostCop = row.status === 'broken' ? row.breakCostCop ?? 0 : 0;
+
+    // 1. Recibido: USD leaves the buyer's US account. A locked installment pays the guaranteed USD;
+    //    an unlocked one is quoted by the exact COP due (plus any break cost) so the trust receives
+    //    that amount to the peso and the USD leg is the smallest whole-cent amount covering it.
+    let spotQuote: OffRampQuote | null = null;
+    let usdPaid: number;
+    if (locked) {
+      usdPaid = row.usdDue!;
+    } else {
+      spotQuote = await this.offRampQuote({ copTarget: row.copDue + breakCostCop });
+      usdPaid = Number(spotQuote.usdc);
+    }
+    await this.onRampDeposit(plan.buyerId, usdPaid, `${plan.encargoRef}-M${idx + 1}`);
+    // Testnet: the on-ramped USD becomes test USDC in the buyer's account and is deposited into
+    // the plan's balance on chain before anything is converted.
+    const stroops = DemoApi.stroopsFor(row, locked, usdPaid);
+    const chainPlanId = this.chain ? await this.chainPlanId(planId) : null;
+    if (this.chain && chainPlanId != null) {
+      const chain = this.chain;
+      await this.onChain('deposit', () => chain.deposit(plan.buyerId, chainPlanId, stroops));
+    }
+    onProgress?.('recibido');
+
+    // 2. Convertido: USDC → COP through the off-ramp.
+    if (!spotQuote) spotQuote = await this.offRampQuote({ usdc: usdPaid.toFixed(7) });
+    let { txId } = await this.offRampPay(spotQuote.quoteId, usdPaid, plan.encargoRef, `M${idx + 1}`);
+    onProgress?.('convertido');
+
+    // 3. Entregado: the contract releases the installment (release_due at the locked amount, or
+    //    release_spot for an open/broken one), the NDF settles, the receipt is written. The
+    //    receipt's transaction hash is the release transaction.
+    if (this.chain && chainPlanId != null) {
+      const chain = this.chain;
+      if (row.status === 'broken') await this.retryBreakOnChain(chain, chainPlanId, row.idx);
+      const rel = await this.onChain(locked ? 'release_due' : 'release_spot', () =>
+        locked ? chain.releaseDue(chainPlanId, row.idx) : chain.releaseSpot(chainPlanId, row.idx, stroops),
+      );
+      txId = rel.txHash;
+    }
+    const receipt = await this.settleAndRecord({ plan, row, usdPaid, locked, anchorRate: spotQuote.rate, txId, breakCostCop, state: s });
+    onProgress?.('entregado');
+    return receipt;
+  }
+
+  /**
+   * The break job records a broken installment even when `break_lock` could not be sent (for
+   * example inside the one-minute expiry of the demo time model); before paying it at spot the
+   * break is retried, and "already broken" (NotLocked) is fine.
+   */
+  private async retryBreakOnChain(chain: ChainBridge, chainPlanId: number, idx: number): Promise<void> {
+    try {
+      await chain.breakLock(chainPlanId, idx);
+    } catch (e) {
+      if (e instanceof ChainError && e.errorName === 'NotLocked') return;
+      throw new ApiError('PROVIDER', `break_lock: ${e instanceof Error ? e.message : String(e)}`, e);
+    }
+  }
+
+  async payAhead(planId: string, onProgress?: ProgressFn): Promise<Receipt[]> {
+    const s = await this.state();
+    this.runtime.guard('payAhead');
+    const { plan, installments } = await this.planBundle(planId);
+    await this.assertFundsAllowed(planId);
+    const idxs = nextLockableIdxs(installments, 'trimestral');
+    if (!idxs) throw new ApiError('NOTHING_TO_PAY_AHEAD', 'no open quarter to pay ahead');
+    const rows = idxs.map((i) => installments[i]!);
+    // One quote for the quarter's COP; each installment's USD leg is sized to cover its own cop_due
+    // at the quoted rate, so every receipt delivers exactly what that installment owes.
+    const quote = await this.offRampQuote({ copTarget: rows.reduce((a, r) => a + r.copDue, 0) });
+    const usdEach = rows.map((r) => usdToCoverCop(r.copDue, quote.rate));
+    await this.onRampDeposit(plan.buyerId, roundUsd(usdEach.reduce((a, b) => a + b, 0)), `${plan.encargoRef}-ADELANTO`);
+    const stroopsEach = usdEach.map((u) => usdToStroops(u));
+    const chainPlanId = this.chain ? await this.chainPlanId(planId) : null;
+    if (this.chain && chainPlanId != null) {
+      const chain = this.chain;
+      const total = stroopsEach.reduce((a, b) => a + b, 0n);
+      await this.onChain('deposit', () => chain.deposit(plan.buyerId, chainPlanId, total));
+    }
+    onProgress?.('recibido');
+    const txIds: string[] = [];
+    for (let k = 0; k < rows.length; k += 1) {
+      const { txId } = await this.offRampPay(quote.quoteId, usdEach[k]!, plan.encargoRef, `M${rows[k]!.idx + 1}`);
+      txIds.push(txId);
+    }
+    onProgress?.('convertido');
+    if (this.chain && chainPlanId != null) {
+      const chain = this.chain;
+      for (let k = 0; k < rows.length; k += 1) {
+        const row = rows[k]!;
+        const rel = await this.onChain('release_spot', () => chain.releaseSpot(chainPlanId, row.idx, stroopsEach[k]!));
+        txIds[k] = rel.txHash;
+      }
+    }
+    const receipts: Receipt[] = [];
+    for (let k = 0; k < rows.length; k += 1) {
+      receipts.push(await this.settleAndRecord({ plan, row: rows[k]!, usdPaid: usdEach[k]!, locked: false, anchorRate: quote.rate, txId: txIds[k]!, breakCostCop: 0, state: s }));
+    }
+    onProgress?.('entregado');
+    return receipts;
+  }
+
+  private async onRampDeposit(buyerId: string, usdAmount: number, memo: string): Promise<void> {
+    try {
+      const d = await this.providers.onRamp.initiateDeposit({ buyerId, usdAmount, memo });
+      if (d.status === 'error') throw new Error('deposit failed');
+    } catch (e) {
+      throw new ApiError('PROVIDER', 'on-ramp failed', e);
+    }
+  }
+
+  private async offRampQuote(req: OffRampQuoteRequest): Promise<OffRampQuote> {
+    try {
+      return await this.providers.offRamp.quote(req);
+    } catch (e) {
+      throw new ApiError('PROVIDER', 'off-ramp quote failed', e);
+    }
+  }
+
+  private async offRampPay(quoteId: string, usd: number, beneficiaryRef: string, memo: string): Promise<{ txId: string }> {
+    try {
+      return await this.providers.offRamp.pay({ quoteId, usdc: usd.toFixed(7), beneficiaryRef, memo });
+    } catch (e) {
+      throw new ApiError('PROVIDER', 'off-ramp payment failed', e);
+    }
+  }
+
+  private async settleAndRecord(a: {
+    plan: Plan;
+    row: Installment;
+    usdPaid: number;
+    locked: boolean;
+    anchorRate: number;
+    txId: string;
+    breakCostCop: number;
+    state: DemoState;
+  }): Promise<Receipt> {
+    const fixing = this.spot();
+    let leg: HedgeLeg | undefined;
+    let settlementCop: number | null = null;
+    if (a.locked && a.row.lockId) {
+      leg = await this.store.get('hedge_legs', `leg-${a.row.lockId}-${a.row.idx}`);
+      if (leg?.tradeId) {
+        try {
+          const settlements = await this.providers.hedge.getSettlements(leg.dueDate, leg.dueDate);
+          const st = settlements.find((x) => x.tradeId === leg!.tradeId);
+          if (st) {
+            settlementCop = st.copAmount;
+            const settledAt = await this.demoTimestamp();
+            await this.store.upsert('hedge_legs', { ...leg, settledCop: st.copAmount, fixing: st.fixing, settledAt, state: 'liquidada' });
+            const trade = await this.store.get('hedge_trades', leg.tradeId);
+            if (trade) await this.store.upsert('hedge_trades', { ...trade, settledCop: st.copAmount, fixing: st.fixing });
+          }
+        } catch (e) {
+          throw new ApiError('PROVIDER', 'hedge settlement failed', e);
+        }
+      }
+    }
+    const receipt = makeReceipt({
+      plan: a.plan,
+      installment: a.row,
+      paidAt: await this.demoTimestamp(),
+      usdPaid: a.usdPaid,
+      rateKind: a.locked ? 'locked' : 'spot',
+      lockedRate: a.locked ? a.row.lockedRate : null,
+      fixing,
+      anchorRate: a.anchorRate,
+      lockId: a.row.lockId,
+      hedgeTradeId: leg?.tradeId ?? null,
+      ndfSettlementCop: settlementCop,
+      fwdRate: leg?.fwdRate ?? null,
+      breakCostCop: a.breakCostCop,
+    });
+    receipt.txHash = a.txId;
+    receipt.id = `rcpt-${a.plan.id}-${a.row.idx}`;
+    await this.store.upsert('receipts', receipt);
+    await this.store.upsert('installments', { ...a.row, status: 'released', usdDue: a.usdPaid, releasedTx: a.txId, releasedAt: receipt.paidAt, receiptId: receipt.id });
+    const staleOffers = (await this.store.all('renewal_offers')).filter((o) => o.planId === a.plan.id && o.state === 'ofrecido' && o.idxs.includes(a.row.idx));
+    for (const o of staleOffers) await this.store.upsert('renewal_offers', { ...o, state: 'descartado' });
+    if (a.row.lockId) await this.refreshLockState(a.row.lockId);
+    return receipt;
+  }
+
+  private async refreshLockState(lockId: string): Promise<void> {
+    const lock = await this.store.get('locks', lockId);
+    if (!lock || lock.state === 'roto' || lock.state === 'vencido') return;
+    const installments = (await this.store.all('installments')).filter((i) => i.planId === lock.planId);
+    const legs = (await this.store.all('hedge_legs')).filter((l) => l.lockId === lockId);
+    const allReleased = lock.idxs.every((i) => installments.find((x) => x.idx === i)?.status === 'released');
+    const allSettled = legs.length > 0 && legs.every((l) => l.state === 'liquidada');
+    const state: Lock['state'] = allReleased && allSettled ? 'cerrado' : allReleased ? 'consumido' : 'activo';
+    if (state !== lock.state) await this.store.upsert('locks', { ...lock, state });
+  }
+
+  // ---------- treasury ----------
+
+  async bookStrip(): Promise<HedgeTrade[]> {
+    await this.state();
+    this.runtime.guard('bookStrip');
+    const pending = (await this.store.all('hedge_legs')).filter((l) => l.state === 'pendiente').sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    if (pending.length === 0) throw new ApiError('NOTHING_TO_BOOK');
+    let booked;
+    try {
+      booked = await this.providers.hedge.bookStrip(pending.map((l) => ({ dueDate: l.dueDate, usdNotional: l.usdNotional, fwdRate: l.fwdRate })));
+    } catch (e) {
+      throw new ApiError('PROVIDER', 'hedge provider failed', e);
+    }
+    const bookedAt = new Date(this.now()).toISOString();
+    const trades: HedgeTrade[] = booked.map((b, k) => ({
+      id: b.tradeId,
+      provider: this.providers.hedge.name,
+      dueDate: b.dueDate,
+      usdNotional: pending[k]!.usdNotional,
+      rate: b.rate,
+      banrepRef: b.banrepRef ?? '',
+      bookedAt,
+      settledCop: null,
+      fixing: null,
+    }));
+    await this.store.upsertMany('hedge_trades', trades);
+    await this.store.upsertMany(
+      'hedge_legs',
+      pending.map((l, k) => ({ ...l, tradeId: trades[k]!.id, bookedAt, state: 'reservada' as const })),
+    );
+    return trades;
+  }
+
+  async setPassThrough(passThrough: number): Promise<DemoState> {
+    if (!(passThrough >= 0 && passThrough <= 1)) throw new ApiError('NOT_FOUND', 'pass-through must be 0..1');
+    await this.runtime.delay(0.3);
+    return this.saveState({ passThrough });
+  }
+
+  // ---------- demo controls ----------
+
+  async advanceClock(months = 1): Promise<DemoState> {
+    const s = await this.state();
+    const offset = s.clockOffsetMonths + months;
+    const next = await this.saveState({ clockOffsetMonths: offset, today: addMonths(s.baseDate, offset) });
+    await this.runDailyJobs(next);
+    return next;
+  }
+
+  /** Jobs the backend runs daily: break-check (grace exceeded) and renewal offers. */
+  private async runDailyJobs(s: DemoState): Promise<void> {
+    const spot = this.spot();
+    const installments = await this.store.all('installments');
+    const locks = await this.store.all('locks');
+    const legs = await this.store.all('hedge_legs');
+
+    for (const row of installments) {
+      if (row.status !== 'locked' || !row.lockId) continue;
+      if (!isBeyondGrace(s.today, row.dueDate)) continue;
+      const leg = legs.find((l) => l.id === `leg-${row.lockId}-${row.idx}`);
+      const cost = breakCost(spot, leg?.fwdRate ?? row.lockedRate ?? spot, leg?.usdNotional ?? usdDue(row.copDue, row.lockedRate ?? spot));
+      try {
+        if (this.chain) {
+          const chainPlanId = s.chainPlans?.[row.planId];
+          if (chainPlanId != null) await this.chain.breakLock(chainPlanId, row.idx);
+        } else {
+          await this.providers.lock.break({ lockId: row.lockId, planId: row.planId, idx: row.idx });
+        }
+      } catch {
+        // The break is recorded anyway; on chain it is retried before the installment is paid at
+        // spot (see `retryBreakOnChain`), which covers a lock still inside its demo expiry.
+      }
+      await this.store.upsert('installments', { ...row, status: 'broken', lockedRate: null, usdDue: null, breakCostCop: cost });
+      if (leg) await this.store.upsert('hedge_legs', { ...leg, state: 'rota', settledCop: leg.settledCop ?? roundCop((leg.fwdRate - spot) * leg.usdNotional), fixing: leg.fixing ?? spot });
+      const lock = locks.find((l) => l.id === row.lockId);
+      if (lock) await this.store.upsert('locks', { ...lock, state: 'roto', brokenIdx: lock.brokenIdx ?? row.idx, breakCostCop: (lock.breakCostCop ?? 0) + cost });
+    }
+
+    const offers = await this.store.all('renewal_offers');
+    const freshInstallments = await this.store.all('installments');
+    for (const lock of locks.filter((l) => l.state === 'activo')) {
+      const last = lock.idxs[lock.idxs.length - 1]!;
+      const lastRow = freshInstallments.find((i) => i.planId === lock.planId && i.idx === last);
+      if (!lastRow || !shouldOfferRenewal(s.today, lastRow.dueDate)) continue;
+      const nextIdxs = nextLockableIdxs(freshInstallments.filter((x) => x.planId === lock.planId && x.idx > last), 'trimestral');
+      if (!nextIdxs) continue;
+      if (offers.some((o) => o.planId === lock.planId && o.state === 'ofrecido' && o.idxs[0] === nextIdxs[0])) continue;
+      const offer: RenewalOffer = { id: `offer-${lock.planId}-${nextIdxs[0]}`, planId: lock.planId, tenor: 'trimestral', idxs: nextIdxs, offeredAt: s.today, state: 'ofrecido' };
+      await this.store.upsert('renewal_offers', offer);
+    }
+
+    for (const lock of locks.filter((l) => l.state === 'cotizado' && isQuoteExpired(l.quoteExpiresAt, this.now()))) {
+      await this.store.upsert('locks', { ...lock, state: 'vencido' });
+    }
+    void compareISO;
+  }
+
+  async reset(): Promise<{ state: DemoState; elapsedMs: number }> {
+    const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const seed = buildSeed();
+    if (this.chain) {
+      // Testnet: fresh plans on chain (new plan ids), seeded in parallel (each on its own channel
+      // accounts); the mapping lives in demo_state so every later call finds its chain plan. The
+      // adverse-event demo plans stay off chain (mock-seed only).
+      const chain = this.chain;
+      const chainPlans: Record<string, number> = {};
+      await Promise.all(
+        seed.plans
+          .filter((p) => !ADVERSE_DEMO_PLANS.includes(p.id))
+          .map(async (plan) => {
+            const installments = seed.installments.filter((i) => i.planId === plan.id);
+            const seedState = { locks: seed.locks.filter((l) => l.planId === plan.id), receipts: seed.receipts.filter((r) => r.planId === plan.id) };
+            const r = await this.onChain(`seed ${plan.id}`, () => chain.seedPlan(plan, installments, seedState));
+            chainPlans[plan.id] = r.chainPlanId;
+          }),
+      );
+      seed.demo_state[0] = { ...seed.demo_state[0]!, mode: 'testnet', chainContractId: chain.contractId, chainPlans };
+    }
+    await this.store.replaceAll(seed);
+    const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const elapsedMs = Math.round((t1 - t0) * 10) / 10;
+    const state = await this.saveState({ errorMode: false, lastResetMs: elapsedMs });
+    return { state, elapsedMs };
+  }
+
+  async setErrorMode(on: boolean): Promise<DemoState> {
+    return this.saveState({ errorMode: on });
+  }
+
+  /** Current wall-clock time in ms (injected for tests). */
+  nowMs(): number {
+    return this.now();
+  }
+
+  /** Expose the demo clock offset without a read delay (used by UI chrome). */
+  clockOffsetMonths(): number {
+    return this.offset;
+  }
+
+  /** Quote-independent helper for UI copy: the spot rate right now. */
+  spotNow(): number {
+    return this.spot();
+  }
+
+  static nextMonthOf(today: ISODate): ISODate {
+    return addMonths(today, 1);
+  }
+
+  static isoNow(): string {
+    return nowISO();
+  }
+}

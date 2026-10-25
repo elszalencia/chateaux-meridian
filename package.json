@@ -1,0 +1,35 @@
+{
+  "name": "casa-puente",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Casa Puente: cross-border installment payments for Constructora Bolivar buyers abroad, on Stellar.",
+  "workspaces": [
+    "services",
+    "web"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "demo:mock": "npm run dev -w web -- --open",
+    "demo:testnet": "node scripts/demo-testnet.mjs",
+    "server:testnet": "tsx services/server/src/main.ts",
+    "infra:up": "node scripts/infra-up.mjs",
+    "deploy:testnet": "tsx scripts/deploy-testnet.mts",
+    "smoke:testnet": "tsx scripts/testnet-smoke.mts",
+    "sim:testnet": "tsx scripts/sim-testnet.mts",
+    "jobs:run": "node scripts/jobs-run.mjs",
+    "test": "npm test -w services && npm test -w web",
+    "test:e2e": "npm run test:e2e -w web",
+    "test:e2e:testnet": "npm exec -w web -- playwright test -c playwright.testnet.config.ts",
+    "test:all": "npm test && npm run test:e2e",
+    "reset": "tsx scripts/reset.mts",
+    "typecheck": "npm run typecheck -w services && npm run typecheck -w web && tsc --noEmit -p infra/receiver",
+    "build": "npm run build -w web",
+    "check:bundle": "node scripts/check-bundle.mjs"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.0"
+  }
+}

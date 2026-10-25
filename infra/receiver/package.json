@@ -1,0 +1,12 @@
+{
+  "name": "@casa-puente/receiver",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Ancla receptora simulada (Colombia): SEP-31 receiving anchor on testnet used as the counterparty for COP payouts.",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  }
+}

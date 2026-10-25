@@ -1,0 +1,2 @@
+# The filled-in environment file (secrets). The root rules only cover `.env*`, not `dev.env`.
+dev.env

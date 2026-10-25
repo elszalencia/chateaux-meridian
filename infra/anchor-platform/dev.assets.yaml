@@ -1,0 +1,47 @@
+# Anchor Platform assets file (ASSETS_TYPE=file, ASSETS_VALUE=/home/dev.assets.yaml).
+# Schema as shown on the SEP-31 configuration page of the Anchor Platform v4 docs (2026-10-22):
+# `sep31.receive` limits and methods, `sep31.sep12` customer types, `sep38` exchangeable assets
+# and delivery methods on the fiat side. Placeholders: G...USDC_ISSUER is the issuer of the test
+# asset (VITE_USDC_ISSUER in .env.testnet), G...DISTRIBUTION is the funded account that receives
+# the sender's payment and holds the USDC trustline.
+
+items:
+  - id: stellar:USDC:G...USDC_ISSUER
+    distribution_account: G...DISTRIBUTION
+    significant_decimals: 2
+    sep31:
+      enabled: true
+      quotes_supported: true
+      quotes_required: true
+      receive:
+        min_amount: 1
+        max_amount: 100000
+        methods:
+          - ACH
+      sep12:
+        sender:
+          types:
+            sep31-sender:
+              description: Casa Puente sending backend acting for the buyer abroad
+        receiver:
+          types:
+            sep31-receiver:
+              description: Buyer's encargo fiduciario at Fidudavivienda that receives the pesos
+    sep38:
+      enabled: true
+      exchangeable_assets:
+        - iso4217:COP
+      country_codes:
+        - CO
+
+  - id: iso4217:COP
+    significant_decimals: 2
+    sep38:
+      enabled: true
+      exchangeable_assets:
+        - stellar:USDC:G...USDC_ISSUER
+      country_codes:
+        - CO
+      buy_delivery_methods:
+        - name: ACH
+          description: Pesos credited by ACH to the encargo fiduciario at Fidudavivienda.

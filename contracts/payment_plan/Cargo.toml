@@ -1,0 +1,19 @@
+[package]
+name = "payment_plan"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Casa Puente payment plan: down-payment installments with rate locks, settled in test USDC"
+license = "UNLICENSED"
+
+[lib]
+crate-type = ["lib", "cdylib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -1,0 +1,75 @@
+# Receive-side Anchor Platform (SEP-31) for the simulated Colombian receiving anchor.
+# Layout follows the SEP-31 integration guide: one Anchor Platform image run three times with a
+# different role flag each (sep-server, platform-server, stellar-observer), a Postgres the three
+# share, and our own business server that answers the Callback API. The image tag is pinned to the
+# release current on 2026-10-22; never `latest`, so a reinstall months later gets the same keys.
+# All services load ./dev.env (copied from dev.env.example; gitignored here and never committed).
+# Not yet run: see README.md, "Status".
+
+services:
+  sep-server:
+    image: stellar/anchor-platform:4.9.0
+    command: --sep-server
+    env_file: dev.env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dev.stellar.toml:/home/dev.stellar.toml:ro
+      - ./dev.assets.yaml:/home/dev.assets.yaml:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  platform-server:
+    image: stellar/anchor-platform:4.9.0
+    command: --platform-server
+    env_file: dev.env
+    ports:
+      - "8085:8085"
+    volumes:
+      - ./dev.stellar.toml:/home/dev.stellar.toml:ro
+      - ./dev.assets.yaml:/home/dev.assets.yaml:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Watches the distribution account on testnet and records incoming payments on SEP-31
+  # transactions (sets transfer_received_at). Without it nothing ever leaves pending_sender.
+  stellar-observer:
+    image: stellar/anchor-platform:4.9.0
+    command: --stellar-observer
+    env_file: dev.env
+    volumes:
+      - ./dev.stellar.toml:/home/dev.stellar.toml:ro
+      - ./dev.assets.yaml:/home/dev.assets.yaml:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      platform-server:
+        condition: service_started
+
+  # Our Callback API implementation (customer, rate, event). Reached by the platform as
+  # http://business-server:8081 (CALLBACK_API_BASE_URL in dev.env).
+  business-server:
+    build: ./business-server
+    env_file: dev.env
+    environment:
+      PORT: "8081"
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  db:
+    image: postgres:14
+    env_file: dev.env
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10

@@ -1,0 +1,19 @@
+{
+  "name": "casa-puente-anchor-platform-business-server",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Callback API (customer, rate, event) for the Anchor Platform receive-side demo anchor.",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.0"
+  }
+}

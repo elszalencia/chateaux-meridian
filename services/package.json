@@ -1,0 +1,24 @@
+{
+  "name": "@casa-puente/services",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Framework-free domain layer: lock engine, provider interfaces, mock adapters, in-memory store and the demo API.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p server",
+    "server": "tsx server/src/main.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.0"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^17.2.1",
+    "@stellar/typescript-wallet-sdk": "^5.1.0"
+  }
+}
