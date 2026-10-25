@@ -90,7 +90,7 @@
         "print": "Imprimir comprobante",
         "whatsapp": "Enviar por WhatsApp",
         "whatsappSent": "Enviado por WhatsApp",
-        "whatsappTo": "Enviado a {to}",
+        "whatsappTo": "Enviado a {to}: {template} con el enlace {link}",
         "next": "Siguiente cliente"
       },
       "office": {
@@ -195,6 +195,7 @@
         "openConstructora": "Abrir Constructora / Fiducia",
         "openTesoreria": "Abrir Tesorería",
         "schedule": "Calendario de cuotas",
+        "scheduleTable": "Tabla de cuotas, desplazable",
         "payments": "Pagos e intentos de pago",
         "payouts": "Entregas al vendedor",
         "whatsapp": "Historial de WhatsApp",

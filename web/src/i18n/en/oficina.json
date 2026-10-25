@@ -90,7 +90,7 @@
         "print": "Print receipt",
         "whatsapp": "Send by WhatsApp",
         "whatsappSent": "Sent by WhatsApp",
-        "whatsappTo": "Sent to {to}",
+        "whatsappTo": "Sent to {to}: {template} with the link {link}",
         "next": "Next customer"
       },
       "office": {
@@ -195,6 +195,7 @@
         "openConstructora": "Open Builder / Trust",
         "openTesoreria": "Open Treasury",
         "schedule": "Installment schedule",
+        "scheduleTable": "Installment table, scrollable",
         "payments": "Payments and attempts",
         "payouts": "Payouts to the seller",
         "whatsapp": "WhatsApp history",

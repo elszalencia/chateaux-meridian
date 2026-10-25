@@ -103,7 +103,7 @@ export function CounterReceipt({ result, item, payment, receipt, office, onNext 
             {send.status === 'error' && <ErrorState error={send.error} onRetry={() => void send.run()} compact />}
             {send.result && (
               <p data-testid="receipt-whatsapp-preview" role="status" className="rounded-xl bg-ink-50 px-4 py-3 text-sm text-ink-700">
-                {ot('mostrador.receipt.whatsappTo', { to: send.result.to })}: {send.result.body}
+                {ot('mostrador.receipt.whatsappTo', { to: send.result.to, template: ot(`outbox.template.${send.result.template}`), link: send.result.link })}
               </p>
             )}
           </div>

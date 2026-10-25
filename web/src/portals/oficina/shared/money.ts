@@ -39,8 +39,8 @@ export function parseUsdToCents(text: string): number | null {
   return Math.round(Number(normalized) * 100);
 }
 
-/** Bills a cashier is likely to be handed for an amount: exact, then the next 10, 50 and 100. */
+/** Bills a cashier is likely to be handed for an amount: exact, then the next 10, 50, 100 and 500. */
 export function quickAmounts(dueCents: number): number[] {
   const up = (step: number) => Math.ceil(dueCents / step) * step;
-  return [...new Set([dueCents, up(1_000), up(5_000), up(10_000)])].filter((c) => c >= dueCents).slice(0, 4);
+  return [...new Set([dueCents, up(1_000), up(5_000), up(10_000), up(50_000)])].slice(0, 4);
 }

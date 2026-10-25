@@ -144,7 +144,7 @@ function Schedule({ pv }: { pv: PlanView }) {
   const flag = (i: InstallmentView) =>
     i.lateInGrace ? <Badge tone="warn">{ot('planes.drawer.lateInGrace')}</Badge> : i.isLate && i.status !== 'missed' ? <Badge tone="danger">{ot('planes.drawer.late', { days: i.businessDaysLate })}</Badge> : null;
   return (
-    <div className="max-h-80 overflow-y-auto rounded-lg border border-ink-200">
+    <div tabIndex={0} role="region" aria-label={ot('planes.drawer.scheduleTable')} className="max-h-80 overflow-y-auto rounded-lg border border-ink-200">
       <table className="w-full text-left text-sm">
         <caption className="sr-only">{ot('planes.drawer.schedule')}</caption>
         <thead className="sticky top-0 bg-ink-50 text-xs uppercase tracking-wide text-ink-500">
