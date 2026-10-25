@@ -190,8 +190,9 @@ The indexer of the El Salvador instance keeps its data under `.data\indexer-sv`.
 ## Tests
 
 ```powershell
-npm test                      # services and web unit tests, then npm run check:db
+npm test                      # services and web unit tests, then npm run check:db and npm run check:names
 npm run check:db              # applies every migration to PGlite (no Docker) and runs the RLS allow/deny cases
+npm run check:names           # fails on the previous product name outside its allowlist (scripts/check-names.mts)
 npx vitest run --root infra/receiver
 npm run typecheck
 npm run test:e2e              # Playwright, mock mode (port 5173); $env:E2E_PORT=5175 first if another checkout's Vite holds 5173
