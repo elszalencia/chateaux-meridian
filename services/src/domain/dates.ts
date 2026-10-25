@@ -1,10 +1,12 @@
 // Calendar helpers on ISO `YYYY-MM-DD` strings, evaluated in UTC so the demo clock never shifts
-// with the presenter's time zone. A business day is Mon to Fri and not a Colombian public holiday
-// (see holidays.ts); US holidays are not modelled, since the deadlines that matter (cutoff, grace)
-// are set by the Colombian trust and banks.
+// with the presenter's time zone. A business day is Mon to Fri and not a public holiday of the
+// corridor's calendar (see holidays.ts). The unsuffixed helpers keep the Colombian calendar they
+// always had; the `...In(d, calendar)` variants take the calendar from config/corridors.ts. US
+// holidays are not modelled, since the deadlines that matter (cutoff, grace, credit dates) are set
+// by the destination country's trust, banks and payout partner.
 
 import type { ISODate } from './types';
-import { isColombianHoliday } from './holidays';
+import { isColombianHoliday, isHoliday, type HolidayCalendar } from './holidays';
 
 export function parseISO(d: ISODate): Date {
   const [y, m, day] = d.split('-').map(Number);
@@ -70,6 +72,35 @@ export function addBusinessDays(d: ISODate, n: number): ISODate {
   while (remaining > 0) {
     cur = addDays(cur, step);
     if (isBusinessDay(cur)) remaining -= 1;
+  }
+  return cur;
+}
+
+/** Mon to Fri and not a public holiday of `calendar`. */
+export function isBusinessDayIn(d: ISODate, calendar: HolidayCalendar): boolean {
+  return !isWeekend(d) && !isHoliday(d, calendar);
+}
+
+/** `businessDaysBetween` on the given calendar. */
+export function businessDaysBetweenIn(from: ISODate, to: ISODate, calendar: HolidayCalendar): number {
+  if (compareISO(to, from) <= 0) return 0;
+  let n = 0;
+  let cur = from;
+  while (compareISO(cur, to) < 0) {
+    cur = addDays(cur, 1);
+    if (isBusinessDayIn(cur, calendar)) n += 1;
+  }
+  return n;
+}
+
+/** `addBusinessDays` on the given calendar. */
+export function addBusinessDaysIn(d: ISODate, n: number, calendar: HolidayCalendar): ISODate {
+  let cur = d;
+  let remaining = Math.abs(n);
+  const step = n >= 0 ? 1 : -1;
+  while (remaining > 0) {
+    cur = addDays(cur, step);
+    if (isBusinessDayIn(cur, calendar)) remaining -= 1;
   }
   return cur;
 }

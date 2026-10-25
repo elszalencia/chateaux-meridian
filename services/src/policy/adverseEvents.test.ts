@@ -4,7 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import type { PolicyEvent } from '../domain/types';
 import { MemoryStore } from '../store/MemoryStore';
-import { BASE_DATE, PLAN_ANDRES, PLAN_CAMILA, PLAN_JORGE, PLAN_LUIS, PLAN_MARIA, PLAN_NATALIA, PLAN_PAOLA, buildSeed } from '../seed/fixtures';
+import type { Snapshot } from '../domain/types';
+import { BASE_DATE, PLAN_ANDRES, PLAN_CAMILA, PLAN_JORGE, PLAN_LUIS, PLAN_MARIA, PLAN_NATALIA, PLAN_PAOLA, SV_DEMO_PLANS, buildSeed } from '../seed/fixtures';
 import { createMockApi } from '../api/createMockApi';
 import { buildUnitSummaries, governanceView } from '../api/views';
 import { NullPolicy, RULES } from './NullPolicy';
@@ -12,8 +13,16 @@ import { GovernanceProviderError, MockGovernanceProvider, type GovernanceProvide
 import { ADVERSE_EVENTS_JOB, fundsTotalCents, governanceOf, performAdverseAction, runAdverseEventsDaily } from './adverseEvents';
 import { REASONS } from './reasons';
 
+/** The Colombia rows of the seed: these tests describe the Colombia plans and their dates. */
+function colombiaSeed(): Snapshot {
+  const s = buildSeed();
+  const sv = new Set(SV_DEMO_PLANS);
+  const keep = <T extends { planId: string }>(rows: T[]) => rows.filter((r) => !sv.has(r.planId));
+  return { ...s, plans: s.plans.filter((p) => !sv.has(p.id)), installments: keep(s.installments), receipts: keep(s.receipts), plan_governance: keep(s.plan_governance), policy_events: keep(s.policy_events), payments: [], payouts: [], wa_outbox: [] };
+}
+
 function setup(today: string, frozen: string[] = []) {
-  const store = new MemoryStore(buildSeed());
+  const store = new MemoryStore(colombiaSeed());
   const provider = new MockGovernanceProvider({ store, today: () => today, frozenPlans: new Set(frozen) });
   return { store, provider, deps: { store, provider, policy: new NullPolicy(), today } };
 }
@@ -208,7 +217,7 @@ describe('view models', () => {
   });
 
   it('builder summaries carry state, reasons, missed and waived counts', () => {
-    const s = buildSeed();
+    const s = colombiaSeed();
     const units = buildUnitSummaries({ ...s, today: BASE_DATE, governance: s.plan_governance, events: s.policy_events });
     const by = (id: string) => units.find((u) => u.plan.id === id)!;
     expect(units).toHaveLength(7);

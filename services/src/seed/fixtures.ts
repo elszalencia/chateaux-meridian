@@ -15,6 +15,10 @@
 // - on hold ............................... Paola (Oliva OLV-0171): identity review since 2026-10-14
 // - defaulted ............................. Jorge (Trifonte TRF-0302): M2–M4 missed, default declared
 // - cancelled with a held balance ......... Natalia (Trifonte TRF-0319): withdrawal, refund pending
+//
+// El Salvador corridor (USD, cents in the amount fields, no locks): svFixtures.ts builds Roxana,
+// Marvin, Doris and Óscar with their sellers, offices, payments, payouts and WhatsApp outbox, and
+// carries the edge-case index of that corridor. Its dates are relative to BASE_DATE too.
 
 import type {
   Buyer,
@@ -41,9 +45,26 @@ import { HEDGE_PROVIDER_LABEL } from '../adapters/mockHedge';
 import { defaultGovernance } from '../policy/transitions';
 import { evidenceHash } from '../policy/evidence';
 import { REASONS } from '../policy/reasons';
+import { buildSvSeed, PLAN_DORIS, PLAN_MARVIN, PLAN_OSCAR, PLAN_ROXANA } from './svFixtures';
+
+export {
+  PLAN_ROXANA,
+  PLAN_MARVIN,
+  PLAN_DORIS,
+  PLAN_OSCAR,
+  SV_DEMO_PLANS,
+  SELLER_CUSCATLAN,
+  SELLER_LOS_ABETOS,
+  SELLER_ALTAVISTA,
+  SELLER_BRISAS,
+  OFFICE_MAXI_WOODBRIDGE,
+  OFFICE_CHATEAUX_SILVER_SPRING,
+  OFFICE_CHATEAUX_MIAMI,
+  svSeedClock,
+} from './svFixtures';
 
 export const BASE_DATE = '2026-10-20';
-export const SEED_VERSION = '2026-10-23.1';
+export const SEED_VERSION = '2026-10-25.1';
 export const DEFAULT_PASS_THROUGH = 0.5;
 export const TRUST_COMPANY = 'Fidudavivienda';
 
@@ -54,11 +75,7 @@ export const PLAN_LUIS = 'plan-luis';
 export const PLAN_PAOLA = 'plan-paola';
 export const PLAN_JORGE = 'plan-jorge';
 export const PLAN_NATALIA = 'plan-natalia';
-// El Salvador corridor (data filled by the seed; ids fixed here so the shell and the tests agree)
-export const PLAN_ROXANA = 'plan-roxana';
-export const PLAN_MARVIN = 'plan-marvin';
-export const PLAN_DORIS = 'plan-doris';
-export const PLAN_OSCAR = 'plan-oscar';
+// El Salvador plan ids live in svFixtures.ts and are re-exported above.
 /** The buyer the Comprador view opens when the route names none, per presenter corridor. */
 export const DEFAULT_PLAN_BY_CORRIDOR: Readonly<Record<'co' | 'sv', string>> = { co: PLAN_MARIA, sv: PLAN_ROXANA };
 /** Plans that exist only to demo adverse states; the testnet reset does not seed them on chain. */
@@ -763,6 +780,10 @@ export function buildSeed(): Snapshot {
   recordEvent({ planId: natalia.id, at: '2026-10-02', kind: 'cancel_plan', idx: null, from: 'active', to: 'cancelled', reasonCode: REASONS.BUYER_WITHDRAWAL.code, rule: 'operator', detail: 'desistimiento signed; refund amount depends on the encargo penalty clause' });
   govern(natalia.id, { state: 'cancelled', reasonCode: REASONS.BUYER_WITHDRAWAL.code, since: '2026-10-02', balanceCents: heldCents });
 
+  // ---------------- El Salvador: built apart, appended after the Colombia rows ----------------
+  const sv = buildSvSeed({ baseDate: BASE_DATE, makeInstallments, recordEvent });
+  for (const g of sv.plan_governance) governance.set(g.planId, g);
+
   const curves: CurvePoint[] = curveAtOffset(0, BASE_DATE).map((p) => ({ ...p, source: CURVE_SOURCE }));
 
   const demoState: DemoState = {
@@ -779,24 +800,24 @@ export function buildSeed(): Snapshot {
   };
 
   return {
-    buyers,
-    units,
-    plans,
-    installments,
+    buyers: [...buyers, ...sv.buyers],
+    units: [...units, ...sv.units],
+    plans: [...plans, ...sv.plans],
+    installments: [...installments, ...sv.installments],
     locks,
     renewal_offers: offers,
     hedge_legs: legs,
     hedge_trades: trades,
-    receipts,
+    receipts: [...receipts, ...sv.receipts],
     curves,
     demo_state: [demoState],
     plan_governance: [...governance.values()],
     policy_events: events,
-    payments: [],
-    sellers: [],
-    seller_units: [],
-    offices: [],
-    payouts: [],
-    wa_outbox: [],
+    payments: sv.payments,
+    sellers: sv.sellers,
+    seller_units: sv.seller_units,
+    offices: sv.offices,
+    payouts: sv.payouts,
+    wa_outbox: sv.wa_outbox,
   };
 }
