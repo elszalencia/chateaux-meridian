@@ -1,4 +1,4 @@
-# Casa Puente: Build Scope v2.1 (Rate Lock + Treasury Hedge + Raven findings)
+# Chateaux: Build Scope v2.1 (Rate Lock + Treasury Hedge + Raven findings)
 
 As of 2026-10-19 · Owner: Alejandro Valencia · Project: Constructora Bolívar cross-border payments on Stellar
 
@@ -12,7 +12,7 @@ Source docs this supersedes or extends:
 
 ## 0. How to use this file
 
-This is the single source of truth for the Casa Puente build. Paste it into the build chat as context. Sections 2 (locked decisions) and 13 (out of scope) are binding; everything marked **Proposed** is a default that can be changed with a reason.
+This is the single source of truth for the Chateaux build. Paste it into the build chat as context. Sections 2 (locked decisions) and 13 (out of scope) are binding; everything marked **Proposed** is a default that can be changed with a reason.
 
 Two additions are new versus the Oct 1 scope:
 1. **Buyer: the lock calendar.** Monthly locks (mortgage phase) and quarterly locks (down-payment phase, 3 installments at one rate), shown per installment on one timeline.
@@ -38,7 +38,7 @@ Pitch line: "One account to pay, one rate you can see coming."
 
 | # | Decision |
 | --- | --- |
-| D1 | Casa Puente is built first; Fiducia Abierta comes later on the same contracts. |
+| D1 | Chateaux is built first; Fiducia Abierta comes later on the same contracts. |
 | D2 | Rail: Stellar. USDC via Stellar Asset Contract; Soroban for the schedule. Testnet + SDF test anchor for the demo. Pin soroban-sdk to the version mainnet runs (`getVersionInfo`); v28.0.0 (Protocol 28, 2026-09-18) has breaking macro changes. |
 | D3 | Rate lock is ours, not Crebit's API. Hedged with our own strategy (D5). |
 | D4 | Two lock tenors only: **Monthly** (1 installment) and **Quarterly** (3 consecutive installments, one rate). |

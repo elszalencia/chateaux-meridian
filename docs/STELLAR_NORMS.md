@@ -1,4 +1,6 @@
-# Stellar and Rust Norms Ledger — Casa Puente
+# Stellar and Rust Norms Ledger — Chateaux
+
+This ledger was carried over from Casa Puente (tag casa-puente-final); its entries keep their original dates.
 
 The living record of what is true about Stellar, Soroban and Rust **for this repo**, with dates and sources. The build process reads this at the start of every session and appends to it when something changes. Newer entries beat older ones, this file beats any older reference material, and live sources beat this file.
 

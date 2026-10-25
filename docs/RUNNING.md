@@ -1,4 +1,4 @@
-# Running Casa Puente
+# Running Chateaux
 
 Exact commands for Windows (PowerShell, from the repo root). The same npm scripts work in any shell on macOS or Linux.
 
@@ -7,7 +7,7 @@ The app runs in two modes with identical screens:
 | Mode | What runs | Ports |
 | --- | --- | --- |
 | `mock` | Vite only; every provider is an in-browser mock with a demo clock | web 5173 |
-| `testnet` | Vite, the Casa Puente server (holds every key, signs every transaction), the simulated Colombian receiving anchor | web 5174, server 8787, receiver 8788 |
+| `testnet` | Vite, the Chateaux server (holds every key, signs every transaction), the simulated Colombian receiving anchor | web 5174, server 8787, receiver 8788 |
 
 ## Deployed contract
 
