@@ -9,6 +9,8 @@ import path from 'node:path';
 // Testnet mode: the page calls the Node server (services/server) through /api; the server holds
 // every key. SERVER_PORT matches the server's (default 8787).
 const serverPort = Number(process.env.SERVER_PORT || 8787);
+// PORT moves the dev server so parallel worktrees never share one (default 5173).
+const port = Number(process.env.PORT || 5173);
 
 export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
@@ -22,6 +24,8 @@ export default defineConfig(({ mode }) => ({
     },
   },
   server: {
+    port,
+    strictPort: true,
     fs: { allow: [path.resolve(import.meta.dirname, '..')] },
     proxy: mode === 'testnet' ? { '/api': { target: `http://localhost:${serverPort}`, changeOrigin: true } } : undefined,
   },

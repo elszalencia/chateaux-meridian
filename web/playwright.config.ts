@@ -1,8 +1,8 @@
 // End-to-end tests drive the real Vite dev server at the presentation viewport (1440x900).
-// E2E_PORT moves the dev server off 5173 when another checkout of the repo is already using it.
+// PORT (default 5173) moves the dev server, so each worktree tests its own server and never reuses another's.
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = Number(process.env.E2E_PORT ?? 5173);
+const PORT = Number(process.env.PORT ?? 5173);
 const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
@@ -24,9 +24,9 @@ export default defineConfig({
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
   ],
   webServer: {
-    command: PORT === 5173 ? 'npm run dev' : `npx vite --port ${PORT} --strictPort`,
+    command: 'npm run dev',
     url: BASE_URL,
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 60_000,
   },
 });
