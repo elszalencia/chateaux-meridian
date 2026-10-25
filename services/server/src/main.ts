@@ -1,9 +1,9 @@
 // Entry point of the testnet server: `npx tsx services/server/src/main.ts` (started by
 // `npm run demo:testnet` next to Vite). Holds every testnet secret, serves the demo API over HTTP
-// on localhost:8787, runs the event indexer and the jobs, and checks at startup whether the seeded
-// plans are still in the step-1 state.
+// on localhost:8787, runs one event indexer per contract instance and the jobs, and checks at
+// startup whether the seeded plans are still in the step-1 state.
 
-import { configFromEnv, loadEnv } from './config';
+import { configFromEnv, loadEnv, offChainCorridors } from './config';
 import { startHttp } from './http';
 import { TestnetService } from './service';
 
@@ -14,9 +14,14 @@ async function main(): Promise<void> {
   const cfg = configFromEnv(loadEnv());
   const svc = new TestnetService(cfg, { log });
   const server = await startHttp(svc, cfg.host, cfg.port, log);
-  log(`Casa Puente testnet server on http://${cfg.host}:${cfg.port} (contract ${cfg.chain.contractId}, channels ${cfg.chain.channelSecrets?.length ?? 0})`);
+  log(`Chateaux testnet server on http://${cfg.host}:${cfg.port} (channels ${cfg.chain.channelSecrets?.length ?? 0})`);
+  for (const [id, c] of Object.entries(cfg.chains)) log(`instance ${id}: contract ${c.contractId}, payee ${c.payeeBackendPublic}`);
+  for (const id of offChainCorridors(cfg)) {
+    log(`instance ${id}: NOT configured (no contract id in .env.testnet); plans of corridor ${id} stay off chain in testnet mode. Run \`npm run deploy:sv\` to deploy it.`);
+  }
   log(`rails: on-ramp ${svc.onRamp?.name ?? 'mock'} · off-ramp ${svc.offRamp?.name ?? 'mock'}${svc.offRamp ? ` at ${cfg.offRampHomeUrl}` : ''}`);
   await svc.start();
+  for (const i of Object.values(svc.instances)) log(`instance ${i.corridor}: runs wasm ${i.wasmHash ?? '(unreadable)'}`);
   log(`jobs: ${svc.jobs.names().join(', ')} (manual trigger: POST /jobs/<name>/run)`);
 
   const shutdown = () => {

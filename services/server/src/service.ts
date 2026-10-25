@@ -1,20 +1,37 @@
-// The testnet backend in one object: the DemoApi stack over the chain bridge with the real rails
-// (SEP-24 on-ramp, SEP-31 off-ramp), the event indexer, receipts built from indexed events, the job
-// registry with the TTL keeper, and the step-1 check of the seeded plans at startup.
+// The testnet backend in one object: the DemoApi stack over one chain bridge per corridor with the
+// real rails (SEP-24 on-ramp, SEP-31 off-ramp), one event indexer per contract instance, receipts
+// built from indexed events, the job registry with the TTL keeper and the adverse-events run, and
+// the step-1 check of the seeded plans at startup.
+//
+// Instances. Colombia runs on the original payment_plan contract, El Salvador on a second instance
+// of the same Wasm with its own payee (config/corridors.ts `chainEnv`). A plan is routed to its
+// corridor's instance everywhere here through `corridorOf(plan)`: `clientFor(planId)` for reads,
+// TTL extensions and adverse calls, `contractIdFor(planId)` for receipts. The `chainPlans` map of
+// demo_state stays keyed by demo plan id (unique across corridors); which instance an id belongs
+// to follows from the plan's corridor, and `chainContractIds` records the instances themselves.
 //
 // Receipts: DemoApi still computes and stores the off-chain half of every payment, but what the API
-// returns as a receipt comes from IndexedReceipts. `pay` and `payAhead` answer once the indexer has
-// seen the release transaction (or after RECEIPT_WAIT_MS, with the receipt marked as pending), and
-// `getReceipts` lists only indexed receipts.
+// returns as a receipt comes from IndexedReceipts, keyed by (contract, chain plan, installment), so
+// both instances' releases live in one receipt store. `pay` and `payAhead` answer once the indexer
+// of the plan's instance has seen the release transaction (or after RECEIPT_WAIT_MS, with the
+// receipt marked as pending), and `getReceipts` lists only indexed receipts.
 
 import path from 'node:path';
 import { rpc } from '@stellar/stellar-sdk';
 import {
+  ADVERSE_DEMO_PLANS,
+  CORRIDOR_IDS,
   ChainClient,
+  DEFAULT_CORRIDOR,
   TestnetBridge,
+  buildSeed,
   checkChainPlans,
+  corridorIdOf,
   createTestnetStack,
+  deployedWasmHash,
   type CasaPuenteApi,
+  type ChainBridge,
+  type CorridorId,
   type DemoState,
   type PayStep,
   type PristineCheck,
@@ -28,29 +45,47 @@ import { EventIndexer } from '../../src/indexer/indexer';
 import { IndexedReceipts } from '../../src/indexer/receipts';
 import { JobRegistry, registerDefaultJobs, planLiveUntil, type JobFn } from '../../src/jobs/index';
 import { ChainGovernanceProvider } from '../../src/chain/governance';
-import { MockGovernanceProvider, NullPolicy, runAdverseEventsDaily } from '../../src/policy/index';
+import { MockGovernanceProvider, NullPolicy, runAdverseEventsDaily, type GovernanceProvider } from '../../src/policy/index';
 import type { ServerConfig } from './config';
 import { FilePersistence } from './filePersistence';
 
-/** Sender of record for SEP-31 payouts: Casa Puente remits on behalf of the buyer. */
+/** Sender of record for SEP-31 payouts: the platform remits on behalf of the buyer. */
 const SEP31_SENDER = { first_name: 'Casa Puente', last_name: 'S.A.S.', email_address: 'operaciones@casapuente.example' };
 
 export interface ServiceOptions {
   log?: (msg: string) => void;
-  /** Replaces the default `adverse-events-daily` job (NullPolicy over the chain governance provider). */
+  /** Replaces the default `adverse-events-daily` job (NullPolicy over the chain governance providers). */
   adverseEventsDaily?: JobFn;
+}
+
+export interface InstanceInfo {
+  corridor: CorridorId;
+  contractId: string;
+  /** Hash of the Wasm the instance runs, read from its ledger entry at startup; null until read. */
+  wasmHash: string | null;
+  payeeBackend: string;
+}
+
+/** Data directory of a corridor's indexer: `.data/indexer` for the default corridor (Colombia, unchanged), `.data/indexer-<id>` otherwise. */
+export function indexerDirFor(dataDir: string, corridor: CorridorId): string {
+  return path.join(dataDir, '..', corridor === DEFAULT_CORRIDOR ? 'indexer' : `indexer-${corridor}`);
 }
 
 export class TestnetService {
   readonly stack: TestnetStack;
+  /** The Colombia client (same as `clients.co`). */
   readonly client: ChainClient;
+  readonly clients: Partial<Record<CorridorId, ChainClient>>;
+  /** The Colombia indexer (same as `indexers.co`), kept for the `/indexer` endpoint. */
   readonly indexer: EventIndexer;
+  readonly indexers: Partial<Record<CorridorId, EventIndexer>>;
   readonly receipts: IndexedReceipts;
   readonly jobs: JobRegistry;
   readonly persistence: FilePersistence;
   readonly onRamp: JournaledOnRamp | null = null;
   readonly offRamp: JournaledOffRamp | null = null;
   readonly startedAt = new Date().toISOString();
+  readonly instances: Partial<Record<CorridorId, InstanceInfo>> = {};
   pristine: PristineCheck[] = [];
   /** Set by the startup check when a seeded plan was already used; cleared by a reset. */
   needsReset = false;
@@ -61,12 +96,24 @@ export class TestnetService {
     opts: ServiceOptions = {},
   ) {
     this.log = opts.log ?? ((m) => console.log(m));
-    this.client = new ChainClient(cfg.chain);
+    this.clients = {};
+    const bridges: Partial<Record<CorridorId, ChainBridge>> = {};
+    for (const id of CORRIDOR_IDS) {
+      const c = cfg.chains[id];
+      if (!c) continue;
+      const client = new ChainClient(c);
+      this.clients[id] = client;
+      bridges[id] = new TestnetBridge(client);
+      this.instances[id] = { corridor: id, contractId: c.contractId, wasmHash: null, payeeBackend: c.payeeBackendPublic };
+    }
+    const co = this.clients[DEFAULT_CORRIDOR];
+    if (!co) throw new Error('the Colombia instance is required');
+    this.client = co;
     this.persistence = new FilePersistence(cfg.dataDir);
     let onRamp: JournaledOnRamp | null = null;
     let offRamp: JournaledOffRamp | null = null;
     this.stack = createTestnetStack({
-      chain: new TestnetBridge(this.client),
+      chains: bridges,
       chainPlans: cfg.chainPlans,
       persistence: this.persistence,
       rails: (runtime) => {
@@ -104,44 +151,92 @@ export class TestnetService {
     this.offRamp = offRamp;
 
     const server = this.client.submitter.server;
-    this.indexer = new EventIndexer({
-      contractId: cfg.chain.contractId,
-      dataDir: path.join(cfg.dataDir, '..', 'indexer'),
-      getEvents: (req) => server.getEvents(req),
-      oldestLedger: async () => (await server.getHealth()).oldestLedger ?? 0,
-      startLedger: cfg.indexerStartLedger,
-      pollIntervalMs: cfg.indexerPollMs,
-      log: this.log,
-    });
-    this.receipts = new IndexedReceipts(path.join(cfg.dataDir, '..', 'indexer'));
-    this.indexer.onEvents(() => void this.joinReceipts());
+    this.indexers = {};
+    for (const [id, client] of Object.entries(this.clients) as [CorridorId, ChainClient][]) {
+      this.indexers[id] = new EventIndexer({
+        contractId: client.contractId,
+        dataDir: indexerDirFor(cfg.dataDir, id),
+        getEvents: (req) => server.getEvents(req),
+        oldestLedger: async () => (await server.getHealth()).oldestLedger ?? 0,
+        // Each instance starts at its own deploy ledger (0 = as far back as the RPC retains events).
+        startLedger: cfg.indexerStartLedgers[id] ?? 0,
+        pollIntervalMs: cfg.indexerPollMs,
+        log: (m) => this.log(id === DEFAULT_CORRIDOR ? m : `[${id}] ${m}`),
+      });
+    }
+    this.indexer = this.indexers[DEFAULT_CORRIDOR]!;
+    this.receipts = new IndexedReceipts(indexerDirFor(cfg.dataDir, DEFAULT_CORRIDOR));
+    for (const ix of Object.values(this.indexers)) ix.onEvents(() => void this.joinReceipts());
 
     this.jobs = registerDefaultJobs(new JobRegistry(this.log), {
       ttlKeeper: {
-        chainPlans: async () => (await this.stack.api.getDemoState()).chainPlans ?? {},
+        chainPlans: () => this.chainPlansOnChain(),
         latestLedger: async () => (await server.getLatestLedger()).sequence,
-        liveUntil: (id) => planLiveUntil(server as rpc.Server, cfg.chain.contractId, id),
-        getStatus: (id) => this.client.getStatus(id),
-        extendTtl: (id) => this.client.extendTtl(id),
+        liveUntil: async (id, planId) => {
+          const client = await this.clientFor(planId);
+          return client ? planLiveUntil(client.submitter.server as rpc.Server, client.contractId, id) : null;
+        },
+        getStatus: async (id, planId) => (await this.requireClient(planId)).getStatus(id),
+        extendTtl: async (id, planId) => (await this.requireClient(planId)).extendTtl(id),
       },
       adverseEventsDaily: opts.adverseEventsDaily ?? this.adverseEventsJob(),
     });
   }
 
+  // ---------- instances ----------
+
+  /** The chain client of a plan's corridor, or null when that corridor has no instance (plan off chain). */
+  async clientFor(planId: string): Promise<ChainClient | null> {
+    const plan = await this.stack.store.get('plans', planId);
+    return this.clients[corridorIdOf(plan)] ?? null;
+  }
+
+  private async requireClient(planId: string): Promise<ChainClient> {
+    const client = await this.clientFor(planId);
+    if (!client) throw new Error(`${planId}: its corridor has no contract instance configured`);
+    return client;
+  }
+
+  async contractIdFor(planId: string): Promise<string | null> {
+    return (await this.clientFor(planId))?.contractId ?? null;
+  }
+
+  /** `chainPlans` of demo_state restricted to the plans whose corridor has an instance here. */
+  private async chainPlansOnChain(corridor?: CorridorId): Promise<Record<string, number>> {
+    const state = await this.stack.api.getDemoState();
+    const plans = await this.stack.store.all('plans');
+    const out: Record<string, number> = {};
+    for (const [planId, chainId] of Object.entries(state.chainPlans ?? {})) {
+      const id = corridorIdOf(plans.find((p) => p.id === planId));
+      if (!this.clients[id]) continue;
+      if (corridor && id !== corridor) continue;
+      out[planId] = chainId;
+    }
+    return out;
+  }
+
+  /** Reads the Wasm hash each instance runs (for /health and the startup log). */
+  async readInstances(): Promise<InstanceInfo[]> {
+    for (const info of Object.values(this.instances)) {
+      info.wasmHash = await deployedWasmHash(this.client.submitter, info.contractId);
+    }
+    return Object.values(this.instances);
+  }
+
   /**
-   * The daily adverse-events run of the policy layer: NullPolicy decides, ChainGovernanceProvider
-   * executes on chain for the plans that live there (the off-chain adverse demo plans go to the
-   * mock provider), and the run's own funds-conservation check becomes a warning when it fails.
+   * The daily adverse-events run of the policy layer: NullPolicy decides, one ChainGovernanceProvider
+   * per instance executes on chain for the plans that live there (each provider falls through to
+   * the next; the off-chain adverse demo plans end at the mock provider), and the run's own
+   * funds-conservation check becomes a warning when it fails.
    */
   private adverseEventsJob(): JobFn {
     return async () => {
       const store = this.stack.store;
       const today = (await this.stack.api.getDemoState()).today;
-      const provider = new ChainGovernanceProvider({
-        client: this.client,
-        chainPlans: async () => (await this.stack.api.getDemoState()).chainPlans ?? {},
-        fallback: new MockGovernanceProvider({ store, today: () => today }),
-      });
+      let provider: GovernanceProvider = new MockGovernanceProvider({ store, today: () => today });
+      for (const [id, client] of Object.entries(this.clients) as [CorridorId, ChainClient][]) {
+        provider = new ChainGovernanceProvider({ client, chainPlans: () => this.chainPlansOnChain(id), fallback: provider });
+      }
       const r = await runAdverseEventsDaily({ store, policy: new NullPolicy(), provider, today });
       const warnings = [
         ...r.failed.map((e) => `${e.planId}: ${e.detail ?? e.kind}`),
@@ -159,77 +254,97 @@ export class TestnetService {
     return this.stack.api;
   }
 
+  /** The Colombia contract id. */
   get contractId(): string {
     return this.cfg.chain.contractId;
   }
 
   async start(): Promise<void> {
+    await this.readInstances();
     await this.checkPlans();
-    this.indexer.start();
+    for (const ix of Object.values(this.indexers)) ix.start();
     this.jobs.start();
   }
 
   stop(): void {
-    this.indexer.stop();
+    for (const ix of Object.values(this.indexers)) ix.stop();
     this.jobs.stop();
     this.persistence.flush();
   }
 
-  /** Compares every mapped chain plan with the seed; any used plan sets `needsReset`. */
+  /** Compares every mapped chain plan with the seed (each on its own instance); any used plan sets `needsReset`. */
   async checkPlans(): Promise<PristineCheck[]> {
-    const state = await this.stack.api.getDemoState();
-    this.pristine = await checkChainPlans(state.chainPlans ?? {}, (id) => this.client.getStatus(id));
+    const chainPlans = await this.chainPlansOnChain();
+    this.pristine = await checkChainPlans(chainPlans, async (id, planId) => (await this.requireClient(planId)).getStatus(id));
     this.needsReset = this.pristine.length === 0 || this.pristine.some((p) => !p.pristine);
     for (const p of this.pristine) this.log(`startup check: ${p.planId} #${p.chainPlanId} ${p.pristine ? 'in the step-1 state' : `NOT pristine (${p.reason})`}`);
     if (this.needsReset) this.log('startup check: the seeded plans were used by an earlier run; click "Reiniciar demo" (or POST /api/reset) before presenting');
     return this.pristine;
   }
 
-  // ---------- receipts from the indexer ----------
+  // ---------- receipts from the indexers ----------
 
-  private async chainMaps(): Promise<{ state: DemoState; byChain: Map<number, string> }> {
+  private async chainMaps(): Promise<{ state: DemoState; byChain: Map<string, Map<number, string>> }> {
     const state = await this.stack.api.getDemoState();
-    const byChain = new Map(Object.entries(state.chainPlans ?? {}).map(([planId, chainId]) => [chainId, planId] as const));
+    const plans = await this.stack.store.all('plans');
+    // chain plan id → demo plan id, per contract instance (ids are random per instance).
+    const byChain = new Map<string, Map<number, string>>();
+    for (const [planId, chainId] of Object.entries(state.chainPlans ?? {})) {
+      const client = this.clients[corridorIdOf(plans.find((p) => p.id === planId))];
+      if (!client) continue;
+      let m = byChain.get(client.contractId);
+      if (!m) byChain.set(client.contractId, (m = new Map()));
+      m.set(chainId, planId);
+    }
     return { state, byChain };
   }
 
-  /** Writes a receipt for every indexed release of a current plan whose settlement is recorded. */
+  /** Writes a receipt for every indexed release of a current plan (either instance) whose settlement is recorded. */
   async joinReceipts(): Promise<number> {
     const { byChain } = await this.chainMaps();
     const settlements = await this.stack.store.all('receipts');
     const plans = await this.stack.store.all('plans');
-    const written = this.receipts.join(
-      this.indexer.events.all(),
-      new Set(byChain.keys()),
-      (chainId, idx) => {
-        const planId = byChain.get(chainId);
-        return settlements.find((r) => r.planId === planId && r.installmentIdx === idx);
-      },
-      (chainId, idx) => {
-        const plan = plans.find((p) => p.id === byChain.get(chainId));
-        return plan ? this.offRamp?.latest(plan.encargoRef, `M${idx + 1}`)?.txId : undefined;
-      },
-    );
-    return written.length;
+    let written = 0;
+    for (const ix of Object.values(this.indexers)) {
+      const ids = byChain.get(ix.stats().contractId) ?? new Map<number, string>();
+      written += this.receipts.join(
+        ix.events.all(),
+        new Set(ids.keys()),
+        (chainId, idx) => {
+          const planId = ids.get(chainId);
+          return settlements.find((r) => r.planId === planId && r.installmentIdx === idx);
+        },
+        (chainId, idx) => {
+          const plan = plans.find((p) => p.id === ids.get(chainId));
+          return plan ? this.offRamp?.latest(plan.encargoRef, `M${idx + 1}`)?.txId : undefined;
+        },
+      ).length;
+    }
+    return written;
   }
 
   async getReceipts(planId: string): Promise<Receipt[]> {
     await this.joinReceipts();
     const { state } = await this.chainMaps();
     const chainId = state.chainPlans?.[planId];
-    return chainId == null ? [] : this.receipts.forPlan(this.contractId, chainId);
+    const contractId = await this.contractIdFor(planId);
+    return chainId == null || !contractId ? [] : this.receipts.forPlan(contractId, chainId);
   }
 
-  /** Waits until the indexer holds the release transaction of `receipt`, then returns the indexed receipt. */
+  /** Waits until the plan's indexer holds the release transaction of `receipt`, then returns the indexed receipt. */
   private async indexed(planId: string, receipt: Receipt): Promise<Receipt> {
     const { state } = await this.chainMaps();
     const chainId = state.chainPlans?.[planId];
-    if (chainId == null) return receipt;
+    const plan = await this.stack.store.get('plans', planId);
+    const corridor = corridorIdOf(plan);
+    const indexer = this.indexers[corridor];
+    const contractId = this.clients[corridor]?.contractId;
+    if (chainId == null || !indexer || !contractId) return receipt;
     const deadline = Date.now() + this.cfg.receiptWaitMs;
     for (;;) {
-      await this.indexer.pollOnce();
+      await indexer.pollOnce();
       await this.joinReceipts();
-      const r = this.receipts.find(this.contractId, chainId, receipt.installmentIdx);
+      const r = this.receipts.find(contractId, chainId, receipt.installmentIdx);
       if (r && r.txHash === receipt.txHash) return { ...r, id: r.receiptId };
       if (Date.now() >= deadline) {
         this.log(`receipt ${receipt.id}: release ${receipt.txHash} not indexed after ${this.cfg.receiptWaitMs} ms; answering with the pending settlement`);
@@ -251,12 +366,57 @@ export class TestnetService {
     return out;
   }
 
+  /**
+   * Re-seeds the demo. DemoApi.reset seeds the plans through the bridges; afterwards every
+   * corridor with an instance is checked once more: a seed plan of that corridor that has no chain
+   * id yet, or whose id the instance does not know, is seeded on that instance here and written
+   * into demo_state. In the normal case the check finds nothing to do.
+   */
   async reset(): Promise<{ state: DemoState; elapsedMs: number }> {
+    const t0 = Date.now();
     const r = await this.stack.api.reset();
+    const added = await this.seedMissingPlans();
+    const state = added > 0 ? await this.stack.api.getDemoState() : r.state;
+    const elapsedMs = added > 0 ? Date.now() - t0 : r.elapsedMs;
     this.needsReset = false;
-    this.pristine = Object.entries(r.state.chainPlans ?? {}).map(([planId, chainPlanId]) => ({ planId, chainPlanId, pristine: true, reason: '' }));
-    this.log(`reset: plans re-seeded in ${(r.elapsedMs / 1000).toFixed(1)} s → ${JSON.stringify(r.state.chainPlans)}`);
-    return r;
+    this.pristine = Object.entries(state.chainPlans ?? {}).map(([planId, chainPlanId]) => ({ planId, chainPlanId, pristine: true, reason: '' }));
+    this.log(`reset: plans re-seeded in ${(elapsedMs / 1000).toFixed(1)} s → ${JSON.stringify(state.chainPlans)}`);
+    return { state, elapsedMs };
+  }
+
+  /** Seeds, on each instance, the seed plans of its corridor that the instance does not hold. Returns how many were seeded. */
+  async seedMissingPlans(): Promise<number> {
+    const seed = buildSeed();
+    const store = this.stack.store;
+    const state = await store.get('demo_state', 'singleton');
+    if (!state) return 0;
+    const chainPlans = { ...(state.chainPlans ?? {}) };
+    let added = 0;
+    for (const [id, bridge] of Object.entries(this.stack.bridges) as [CorridorId, ChainBridge][]) {
+      const plans = seed.plans.filter((p) => corridorIdOf(p) === id && !ADVERSE_DEMO_PLANS.includes(p.id));
+      const missing: typeof plans = [];
+      for (const plan of plans) {
+        const chainId = chainPlans[plan.id];
+        if (chainId == null) {
+          missing.push(plan);
+          continue;
+        }
+        const known = await bridge.getStatus(chainId).then(() => true, () => false);
+        if (!known) missing.push(plan);
+      }
+      await Promise.all(
+        missing.map(async (plan) => {
+          const installments = seed.installments.filter((i) => i.planId === plan.id);
+          const seedState = { locks: seed.locks.filter((l) => l.planId === plan.id), receipts: seed.receipts.filter((r) => r.planId === plan.id) };
+          const res = await bridge.seedPlan(plan, installments, seedState);
+          chainPlans[plan.id] = res.chainPlanId;
+          added += 1;
+          this.log(`reset: ${plan.id} seeded on the ${id} instance as chain plan #${res.chainPlanId} (${res.steps.length} transactions, ${(res.elapsedMs / 1000).toFixed(1)} s)`);
+        }),
+      );
+    }
+    if (added > 0) await store.upsert('demo_state', { ...state, chainPlans });
+    return added;
   }
 
   health(): Record<string, unknown> {
@@ -264,10 +424,13 @@ export class TestnetService {
       status: 'ok',
       mode: 'testnet',
       contractId: this.contractId,
+      contracts: Object.fromEntries(Object.values(this.instances).map((i) => [i.corridor, { contractId: i.contractId, wasmHash: i.wasmHash, payeeBackend: i.payeeBackend }])),
+      offChainCorridors: CORRIDOR_IDS.filter((id) => !this.clients[id]),
       startedAt: this.startedAt,
       needsReset: this.needsReset,
       plans: this.pristine,
       indexer: this.indexer.stats(),
+      indexers: Object.fromEntries(Object.entries(this.indexers).map(([id, ix]) => [id, ix.stats()])),
       receipts: this.receipts.store.size,
       jobs: this.jobs.status().map((j) => ({ name: j.name, schedule: j.schedule, running: j.running, lastRun: j.lastRun && { at: j.lastRun.startedAt, ok: j.lastRun.ok, summary: j.lastRun.summary, warnings: j.lastRun.warnings } })),
       rails: {

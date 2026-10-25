@@ -440,6 +440,7 @@ export class Sep31OffRampProvider implements OffRampProvider {
 
   async quote(req: OffRampQuoteRequest): Promise<OffRampQuote> {
     const step = 'SEP-38 quote';
+    if (req.usdTarget != null) throw new Sep31Error(step, 'USD-target quotes belong to the seller payout rails, not the COP off-ramp');
     const info = await this.anchor();
     const byCop = req.copTarget != null;
     const body: Record<string, string> = { context: 'sep31', sell_asset: this.sellAsset, buy_asset: 'iso4217:COP' };

@@ -22,6 +22,7 @@ export const REASONS = {
   ACH_RETURN: { code: 303, key: 'achReturn' },
   FUNDS_FROZEN: { code: 304, key: 'fundsFrozen' },
   PAYOUT_RETURNED: { code: 305, key: 'payoutReturned' },
+  CNR_LIEN: { code: 306, key: 'cnrLien' },
   HOLD_CLEARED: { code: 310, key: 'holdCleared' },
   REFUND: { code: 400, key: 'refund' },
   PLAN_COMPLETED: { code: 500, key: 'planCompleted' },

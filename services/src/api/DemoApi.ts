@@ -2,6 +2,10 @@
 // legs; pay → on-ramp → off-ramp → settlement → receipt; clock jobs; reset) on top of a Store and the
 // four providers. Stage 2 and 3 keep this class and swap the providers; the Supabase layer swaps the
 // Store. Nothing here imports a UI framework.
+// Corridors: the lock, pay-ahead and FX paths below are the Colombia flow and stay as they were;
+// a corridor whose pay steps have no conversion leg (El Salvador) pays through svApi.ts, which also
+// holds the office portals. Lock paths refuse a corridor with locks disabled before any provider
+// call. Messages (WhatsApp outbox) go through one MessageChannel for both corridors.
 
 import type {
   Buyer,
@@ -35,7 +39,7 @@ import type {
   UnitSummary,
 } from '../domain/types';
 import type { AdverseAction } from '../policy/transitions';
-import { corridorIdOf, type CorridorId } from '../corridors/index';
+import { CORRIDORS, LocksDisabledError, assertLocksEnabled, corridorIdOf, corridorOf, type CorridorId, type PayoutOption } from '../corridors/index';
 import { addMonths, compareISO, nowISO } from '../domain/dates';
 import {
   GRACE_BUSINESS_DAYS,
@@ -53,51 +57,24 @@ import {
   usdDue,
   usdToCoverCop,
 } from '../lock/engine';
-import type { OffRampQuote, OffRampQuoteRequest, Providers } from '../adapters/interfaces';
+import type { CashInProvider, OffRampQuote, OffRampQuoteRequest, Providers, SellerPayoutProvider } from '../adapters/interfaces';
 import { MockRuntime, curveAtOffset, spotAtOffset } from '../adapters/mockRuntime';
+import { MoneyGramOnRamp } from '../adapters/moneyGramOnRamp';
+import { UsdBankPayout } from '../adapters/usdBankPayout';
+import { UsdcHold } from '../adapters/usdcHold';
 import type { Store } from '../store/Store';
-import { ADVERSE_DEMO_PLANS, buildSeed, makeReceipt } from '../seed/fixtures';
+import { ADVERSE_DEMO_PLANS, buildSeed, makeReceipt, svSeedClock } from '../seed/fixtures';
 import { fundsAllowed } from '../policy/transitions';
+import { MockGovernanceProvider, type GovernanceProvider } from '../policy/GovernanceProvider';
 import { buildHedgeBook, buildPlanView, buildReconRows, buildUnitSummaries } from './views';
 import { demoLockExpiryTs, lockIdBytes, lockedStroops, usdToStroops, type ChainBridge } from '../chain/bridge';
 import { ChainError } from '../chain/submit';
+import { OutboxChannel, type MessageChannel, type TemplateRenderer } from '../channels/MessageChannel';
+import { sellerSummary } from '../sellers/sellers';
+import { ApiError } from './errors';
+import * as sv from './svApi';
 
-export type ApiErrorCode =
-  | 'NOT_FOUND'
-  | 'NO_LOCKABLE'
-  | 'CUTOFF'
-  | 'NOT_QUOTED'
-  | 'QUOTE_EXPIRED'
-  | 'ALREADY_PAID'
-  | 'NOTHING_TO_BOOK'
-  | 'NOTHING_TO_PAY_AHEAD'
-  | 'PLAN_BLOCKED'
-  | 'INSTALLMENT_MISSED'
-  | 'PROVIDER'
-  // El Salvador corridor
-  | 'LOCKS_DISABLED' // quoteLock/acceptLock on a corridor with locks_enabled = false
-  | 'METHOD_NOT_OFFERED' // pay method not in the corridor's list or hidden for this buyer
-  | 'ABOVE_LIMIT' // MoneyGram cash-in above the network cap
-  | 'BELOW_LIMIT'
-  | 'STATE_EXCLUDED' // MoneyGram not offered in the buyer's state
-  | 'REFERENCE_EXPIRED' // MoneyGram reference past its expiry
-  | 'REFERENCE_NOT_COMPLETED' // the network has not reported the cash-in yet
-  | 'NOT_DUE_YET' // outside the pay window
-  | 'INSUFFICIENT_CASH' // counter: amount received below the amount due
-  | 'SELLER_UNVERIFIED'
-  | 'SELLER_PAUSED'
-  | 'SELLER_REJECTED'
-  | 'SELLER_COOLING_OFF'
-  | 'CNR_ALERT'
-  | 'INVALID_TRANSITION' // adverse action refused by the contract rules
-  | 'NOT_IMPLEMENTED';
-
-export class ApiError extends Error {
-  constructor(public readonly code: ApiErrorCode, message?: string, public readonly cause?: unknown) {
-    super(message ?? code);
-    this.name = 'ApiError';
-  }
-}
+export { ApiError, type ApiErrorCode } from './errors';
 
 export type ProgressFn = (completedStep: PayStep) => void;
 
@@ -180,6 +157,12 @@ export interface DemoApiOptions {
    */
   chain?: ChainBridge;
   chains?: Partial<Record<CorridorId, ChainBridge>>;
+  /** Where messages go; default: the `wa_outbox` table (mock WhatsApp channel). */
+  messages?: MessageChannel;
+  /** Renders a template body; default: `plainRenderer`. The web app passes `dictionaryRenderer` over its dictionaries. */
+  renderTemplate?: TemplateRenderer;
+  /** Adverse-event seam; default: MockGovernanceProvider over the store (testnet passes one over the bridge). */
+  governance?: GovernanceProvider;
 }
 
 export class DemoApi implements CasaPuenteApi {
@@ -189,7 +172,13 @@ export class DemoApi implements CasaPuenteApi {
   private readonly now: () => number;
   private readonly chain: ChainBridge | undefined;
   private readonly chains: Partial<Record<CorridorId, ChainBridge>>;
+  private readonly messages: MessageChannel;
+  private readonly governance: GovernanceProvider;
+  private readonly cashIn: CashInProvider;
+  private readonly sellerPayouts: Record<PayoutOption, SellerPayoutProvider>;
   private offset = 0;
+  private todayCache: ISODate | null = null;
+  private sessionStartMs: number;
 
   constructor(opts: DemoApiOptions) {
     this.store = opts.store;
@@ -199,11 +188,71 @@ export class DemoApi implements CasaPuenteApi {
     this.chain = opts.chain;
     this.chains = { ...(opts.chain ? { co: opts.chain } : {}), ...(opts.chains ?? {}) };
     this.runtime.clockOffset = () => this.offset;
+    this.sessionStartMs = this.now();
+    this.messages = opts.messages ?? new OutboxChannel({ store: this.store, render: opts.renderTemplate, timestamp: () => new Date(this.sessionClockMs()).toISOString() });
+    this.governance = opts.governance ?? new MockGovernanceProvider({ store: this.store, today: async () => (await this.state()).today });
+    // The corridor rails default to the mocks so the testnet factory needs no change; the limits of
+    // the first corridor that offers a cash-in network are the provider's own default (requests
+    // carry the plan's corridor limits anyway).
+    const cashCorridor = Object.values(CORRIDORS).find((c) => c.moneyGram);
+    this.cashIn =
+      opts.providers.cashIn ??
+      new MoneyGramOnRamp({
+        driver: 'mock',
+        runtime: this.runtime,
+        limits: cashCorridor?.moneyGram ?? { minUsd: 0, maxUsd: Number.POSITIVE_INFINITY, excludedStates: [], referenceTtlMinutes: 60 },
+        feeUsd: cashCorridor?.feesUsd.moneygram_cash ?? 0,
+        now: () => this.sessionClockMs(),
+      });
+    const payoutCorridor = Object.values(CORRIDORS).find((c) => c.payoutProviders.includes('usd-bank-payout')) ?? CORRIDORS[corridorIdOf(null)];
+    // Option A records a hand-off only (no transfer) when a corridor that offers it runs on chain.
+    const holdOnChain = Object.values(CORRIDORS).some((c) => c.payoutProviders.includes('usdc-hold') && this.chains[c.id] != null);
+    this.sellerPayouts = {
+      A: opts.providers.sellerPayouts?.A ?? new UsdcHold({ runtime: this.runtime, now: () => this.sessionClockMs(), onChain: holdOnChain }),
+      B: opts.providers.sellerPayouts?.B ?? new UsdBankPayout({ runtime: this.runtime, corridor: payoutCorridor, now: () => this.sessionClockMs() }),
+    };
   }
 
   /** The chain bridge a plan's corridor runs on (undefined in mock mode or for an unmapped corridor). */
   protected chainFor(plan: Pick<Plan, 'corridor'>): ChainBridge | undefined {
     return this.chains[corridorIdOf(plan)];
+  }
+
+  /** The adverse-event provider the desk actions run through (mock by default; testnet passes its own). */
+  protected governanceProvider(): GovernanceProvider {
+    return this.governance;
+  }
+
+  /**
+   * The session clock of the corridor rows (payments, payouts, messages): the demo date at the seed
+   * clock plus the time elapsed in this session, so a reference issued 12 minutes before the seed
+   * clock is still payable when the page opens, and "+1 mes" expires it. Colombia receipts keep
+   * their wall-clock time of day (`demoTimestamp`).
+   */
+  private sessionClockMs(): number {
+    const today = this.todayCache ?? new Date(this.now()).toISOString().slice(0, 10);
+    return Date.parse(svSeedClock(today)) + Math.max(0, this.now() - this.sessionStartMs);
+  }
+
+  private svContext(): sv.SvContext {
+    return {
+      store: this.store,
+      providers: this.providers,
+      cashIn: this.cashIn,
+      payoutRail: (option) => this.sellerPayouts[option],
+      runtime: this.runtime,
+      nowMs: () => this.sessionClockMs(),
+      today: async () => (await this.state()).today,
+      spot: () => this.spot(),
+      chainFor: (plan) => this.chainFor(plan),
+      chainPlanId: (planId) => this.chainPlanId(planId),
+      onChain: (what, run) => this.onChain(what, run),
+      messages: this.messages,
+      governance: () => this.governanceProvider(),
+      viewOf: async (planId) => this.viewOf(planId, await this.state()),
+      planBundle: (planId) => this.planBundle(planId),
+      assertFundsAllowed: (planId) => this.assertFundsAllowed(planId),
+    };
   }
 
   // ---------- chain helpers (testnet mode) ----------
@@ -237,6 +286,7 @@ export class DemoApi implements CasaPuenteApi {
     const s = await this.store.get('demo_state', 'singleton');
     if (!s) throw new ApiError('NOT_FOUND', 'demo_state missing; run reset');
     this.offset = s.clockOffsetMonths;
+    this.todayCache = s.today;
     this.runtime.errorMode = s.errorMode;
     return s;
   }
@@ -245,6 +295,7 @@ export class DemoApi implements CasaPuenteApi {
     const s = { ...(await this.state()), ...patch };
     await this.store.upsert('demo_state', s);
     this.offset = s.clockOffsetMonths;
+    this.todayCache = s.today;
     this.runtime.errorMode = s.errorMode;
     return s;
   }
@@ -279,7 +330,11 @@ export class DemoApi implements CasaPuenteApi {
   }
 
   private async viewOf(planId: string, s: DemoState): Promise<PlanView> {
+    await sv.refreshReferences(this.svContext());
     const b = await this.planBundle(planId);
+    const seller = b.plan.sellerId ? await this.store.get('sellers', b.plan.sellerId) : undefined;
+    const units = seller ? (await this.store.all('seller_units')).filter((u) => u.sellerId === seller.id) : [];
+    const payments = (await this.store.all('payments')).filter((p) => p.planId === planId && (p.status === 'pending' || p.status === 'quote_expired')).sort((a, c) => c.createdAt.localeCompare(a.createdAt));
     return buildPlanView({
       ...b,
       locks: await this.store.all('locks'),
@@ -289,7 +344,29 @@ export class DemoApi implements CasaPuenteApi {
       passThrough: s.passThrough,
       governance: await this.store.get('plan_governance', planId),
       events: await this.store.all('policy_events'),
+      seller: seller ? sellerSummary(seller, units, b.plan.unitId, new Date(this.sessionClockMs()).toISOString()) : null,
+      payments,
     });
+  }
+
+  /** Lock paths refuse a corridor without locks before any provider or chain call. */
+  private assertLocks(plan: Plan): void {
+    try {
+      assertLocksEnabled(plan);
+    } catch (e) {
+      if (e instanceof LocksDisabledError) throw new ApiError('LOCKS_DISABLED', e.message, e);
+      throw e;
+    }
+  }
+
+  /** The Colombia pay flow sends the same paid notices the corridor lists (received, delivered). */
+  private async notifyPaid(plan: Plan, row: Installment, receipt: Receipt): Promise<void> {
+    const buyer = await this.store.get('buyers', plan.buyerId);
+    if (!buyer) return;
+    const ctx = this.svContext();
+    const params = { usd: receipt.usdPaid.toFixed(2), seller: plan.trustCompany, date: receipt.paidAt.slice(0, 10) };
+    await sv.notify(ctx, { plan, buyer, template: 'pago_recibido', idx: row.idx, params, once: 'installment' });
+    await sv.notify(ctx, { plan, buyer, template: 'pago_entregado', idx: row.idx, params, once: 'installment' });
   }
 
   /** Deposits, locks and payments are refused while the plan is on hold, defaulted, cancelled or completed. */
@@ -375,6 +452,7 @@ export class DemoApi implements CasaPuenteApi {
     const s = await this.state();
     this.runtime.guard('quoteLock');
     const { plan, installments } = await this.planBundle(planId);
+    this.assertLocks(plan);
     await this.assertFundsAllowed(planId);
     const idxs = nextLockableIdxs(installments, tenor);
     if (!idxs) throw new ApiError('NO_LOCKABLE', 'no consecutive open installments for this tenor');
@@ -448,7 +526,8 @@ export class DemoApi implements CasaPuenteApi {
       await this.store.upsert('locks', { ...lock, state: 'vencido' });
       throw new ApiError('QUOTE_EXPIRED');
     }
-    const { installments } = await this.planBundle(lock.planId);
+    const { plan: lockPlan, installments } = await this.planBundle(lock.planId);
+    this.assertLocks(lockPlan);
     await this.assertFundsAllowed(lock.planId);
     const rows = lock.idxs.map((i) => installments[i]!);
     if (rows.some((r) => r.status !== 'open')) throw new ApiError('NO_LOCKABLE', 'an installment is no longer open');
@@ -528,6 +607,8 @@ export class DemoApi implements CasaPuenteApi {
     const s = await this.state();
     this.runtime.guard('pay');
     const { plan, installments } = await this.planBundle(planId);
+    // A corridor without a conversion step pays in the installment's own currency (svApi).
+    if (!corridorOf(plan).paySteps.includes('convertido')) return sv.payDirect(this.svContext(), planId, idx, onProgress);
     const row = installments[idx];
     if (!row) throw new ApiError('NOT_FOUND', `installment ${idx}`);
     if (row.status === 'released') throw new ApiError('ALREADY_PAID');
@@ -576,6 +657,7 @@ export class DemoApi implements CasaPuenteApi {
       txId = rel.txHash;
     }
     const receipt = await this.settleAndRecord({ plan, row, usdPaid, locked, anchorRate: spotQuote.rate, txId, breakCostCop, state: s });
+    await this.notifyPaid(plan, row, receipt);
     onProgress?.('entregado');
     return receipt;
   }
@@ -598,6 +680,7 @@ export class DemoApi implements CasaPuenteApi {
     const s = await this.state();
     this.runtime.guard('payAhead');
     const { plan, installments } = await this.planBundle(planId);
+    if (!corridorOf(plan).views.payAhead) throw new ApiError('NOTHING_TO_PAY_AHEAD', 'this corridor does not offer paying a quarter ahead');
     await this.assertFundsAllowed(planId);
     const idxs = nextLockableIdxs(installments, 'trimestral');
     if (!idxs) throw new ApiError('NOTHING_TO_PAY_AHEAD', 'no open quarter to pay ahead');
@@ -632,6 +715,7 @@ export class DemoApi implements CasaPuenteApi {
     const receipts: Receipt[] = [];
     for (let k = 0; k < rows.length; k += 1) {
       receipts.push(await this.settleAndRecord({ plan, row: rows[k]!, usdPaid: usdEach[k]!, locked: false, anchorRate: quote.rate, txId: txIds[k]!, breakCostCop: 0, state: s }));
+      await this.notifyPaid(plan, rows[k]!, receipts[k]!);
     }
     onProgress?.('entregado');
     return receipts;
@@ -775,6 +859,7 @@ export class DemoApi implements CasaPuenteApi {
     const offset = s.clockOffsetMonths + months;
     const next = await this.saveState({ clockOffsetMonths: offset, today: addMonths(s.baseDate, offset) });
     await this.runDailyJobs(next);
+    await sv.runSvDailyJobs(this.svContext());
     return next;
   }
 
@@ -818,6 +903,11 @@ export class DemoApi implements CasaPuenteApi {
       if (offers.some((o) => o.planId === lock.planId && o.state === 'ofrecido' && o.idxs[0] === nextIdxs[0])) continue;
       const offer: RenewalOffer = { id: `offer-${lock.planId}-${nextIdxs[0]}`, planId: lock.planId, tenor: 'trimestral', idxs: nextIdxs, offeredAt: s.today, state: 'ofrecido' };
       await this.store.upsert('renewal_offers', offer);
+      const plan = await this.store.get('plans', lock.planId);
+      const buyer = plan ? await this.store.get('buyers', plan.buyerId) : undefined;
+      if (plan && buyer) {
+        await sv.notify(this.svContext(), { plan, buyer, template: 'renovacion_bloqueo', idx: nextIdxs[0]!, params: { date: lastRow.dueDate, n: `${nextIdxs[0]! + 1}–${nextIdxs[nextIdxs.length - 1]! + 1}` }, once: 'installment' });
+      }
     }
 
     for (const lock of locks.filter((l) => l.state === 'cotizado' && isQuoteExpired(l.quoteExpiresAt, this.now()))) {
@@ -829,25 +919,30 @@ export class DemoApi implements CasaPuenteApi {
   async reset(): Promise<{ state: DemoState; elapsedMs: number }> {
     const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const seed = buildSeed();
-    if (this.chain) {
+    if (this.chain || Object.keys(this.chains).length > 0) {
       // Testnet: fresh plans on chain (new plan ids), seeded in parallel (each on its own channel
       // accounts); the mapping lives in demo_state so every later call finds its chain plan. The
-      // adverse-event demo plans stay off chain (mock-seed only).
-      const chain = this.chain;
+      // adverse-event demo plans stay off chain (mock-seed only). Each plan goes to the bridge of
+      // its corridor; a corridor without a bridge stays off chain.
       const chainPlans: Record<string, number> = {};
+      const chainContractIds: Partial<Record<CorridorId, string>> = {};
+      for (const [id, bridge] of Object.entries(this.chains) as [CorridorId, ChainBridge][]) chainContractIds[id] = bridge.contractId;
       await Promise.all(
         seed.plans
           .filter((p) => !ADVERSE_DEMO_PLANS.includes(p.id))
           .map(async (plan) => {
+            const chain = this.chainFor(plan);
+            if (!chain) return;
             const installments = seed.installments.filter((i) => i.planId === plan.id);
             const seedState = { locks: seed.locks.filter((l) => l.planId === plan.id), receipts: seed.receipts.filter((r) => r.planId === plan.id) };
             const r = await this.onChain(`seed ${plan.id}`, () => chain.seedPlan(plan, installments, seedState));
             chainPlans[plan.id] = r.chainPlanId;
           }),
       );
-      seed.demo_state[0] = { ...seed.demo_state[0]!, mode: 'testnet', chainContractId: chain.contractId, chainPlans };
+      seed.demo_state[0] = { ...seed.demo_state[0]!, mode: 'testnet', chainContractId: (this.chain ?? Object.values(this.chains)[0])?.contractId, chainContractIds, chainPlans };
     }
     await this.store.replaceAll(seed);
+    this.sessionStartMs = this.now();
     const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const elapsedMs = Math.round((t1 - t0) * 10) / 10;
     const state = await this.saveState({ errorMode: false, lastResetMs: elapsedMs });
@@ -858,77 +953,92 @@ export class DemoApi implements CasaPuenteApi {
     return this.saveState({ errorMode: on });
   }
 
-  // ---------- El Salvador corridor and the office portals (implemented in services/src/api/svApi.ts) ----------
+  // ---------- El Salvador corridor and the office portals (services/src/api/svApi.ts) ----------
 
-  private notImplemented(method: string): never {
-    throw new ApiError('NOT_IMPLEMENTED', `${method} is not implemented yet`);
+  /** Reads go through the runtime guard (error mode, latency) like every other read. */
+  private async svRead<T>(op: string, run: (ctx: sv.SvContext) => Promise<T>): Promise<T> {
+    await this.guardedRead(op);
+    return run(this.svContext());
+  }
+
+  /** Writes check the state and the error switch first, then run with the corridor context. */
+  private async svWrite<T>(op: string, run: (ctx: sv.SvContext) => Promise<T>): Promise<T> {
+    await this.state();
+    this.runtime.guard(op);
+    return run(this.svContext());
   }
 
   async listOffices(): Promise<Office[]> {
-    return this.notImplemented('listOffices');
+    return this.svRead('listOffices', (ctx) => sv.listOffices(ctx));
   }
-  async getPayOptions(_planId: string, _idx: number): Promise<PayOptionsView> {
-    return this.notImplemented('getPayOptions');
+  async getPayOptions(planId: string, idx: number): Promise<PayOptionsView> {
+    return this.svRead('getPayOptions', (ctx) => sv.getPayOptions(ctx, planId, idx));
   }
-  async requestCashReference(_planId: string, _idx: number): Promise<Payment> {
-    return this.notImplemented('requestCashReference');
+  async requestCashReference(planId: string, idx: number): Promise<Payment> {
+    return this.svWrite('requestCashReference', (ctx) => sv.requestCashReference(ctx, planId, idx));
   }
-  async renewCashReference(_paymentId: string): Promise<Payment> {
-    return this.notImplemented('renewCashReference');
+  async renewCashReference(paymentId: string): Promise<Payment> {
+    return this.svWrite('renewCashReference', (ctx) => sv.renewCashReference(ctx, paymentId));
   }
-  async completeCashReference(_paymentId: string, _onProgress?: ProgressFn): Promise<Receipt> {
-    return this.notImplemented('completeCashReference');
+  async completeCashReference(paymentId: string, onProgress?: ProgressFn): Promise<Receipt> {
+    return this.svWrite('completeCashReference', (ctx) => sv.completeCashReference(ctx, paymentId, onProgress));
   }
-  async getPayment(_paymentId: string): Promise<Payment> {
-    return this.notImplemented('getPayment');
+  async getPayment(paymentId: string): Promise<Payment> {
+    return this.svRead('getPayment', (ctx) => sv.getPayment(ctx, paymentId));
   }
-  async listPayments(_filter?: { planId?: string; officeId?: string; cashierId?: string; date?: ISODate; status?: Payment['status'] }): Promise<Payment[]> {
-    return this.notImplemented('listPayments');
+  async listPayments(filter?: { planId?: string; officeId?: string; cashierId?: string; date?: ISODate; status?: Payment['status'] }): Promise<Payment[]> {
+    return this.svRead('listPayments', (ctx) => sv.listPayments(ctx, filter));
   }
-  async searchBuyers(_query: string): Promise<CounterSearchResult[]> {
-    return this.notImplemented('searchBuyers');
+  async searchBuyers(query: string): Promise<CounterSearchResult[]> {
+    return this.svRead('searchBuyers', (ctx) => sv.searchBuyers(ctx, query));
   }
   async takeCounterPayment(
-    _args: { planId: string; idx: number; tender: Tender; amountReceived: number; officeId: string; cashierId: string },
-    _onProgress?: ProgressFn,
+    args: { planId: string; idx: number; tender: Tender; amountReceived: number; officeId: string; cashierId: string },
+    onProgress?: ProgressFn,
   ): Promise<{ payment: Payment; receipt: Receipt }> {
-    return this.notImplemented('takeCounterPayment');
+    return this.svWrite('takeCounterPayment', (ctx) => sv.takeCounterPayment(ctx, args, onProgress));
   }
-  async getShiftTotal(_args: { officeId: string; cashierId: string }): Promise<ShiftTotal> {
-    return this.notImplemented('getShiftTotal');
+  async getShiftTotal(args: { officeId: string; cashierId: string }): Promise<ShiftTotal> {
+    return this.svRead('getShiftTotal', (ctx) => sv.getShiftTotal(ctx, args));
   }
-  async sendReceiptMessage(_planId: string, _idx: number): Promise<OutboxMessage> {
-    return this.notImplemented('sendReceiptMessage');
+  async sendReceiptMessage(planId: string, idx: number): Promise<OutboxMessage> {
+    return this.svWrite('sendReceiptMessage', (ctx) => sv.sendReceiptMessage(ctx, planId, idx));
   }
   async listPlanRows(): Promise<PlanRow[]> {
-    return this.notImplemented('listPlanRows');
+    return this.svRead('listPlanRows', (ctx) => sv.listPlanRows(ctx));
   }
   async listSellers(): Promise<SellerView[]> {
-    return this.notImplemented('listSellers');
+    return this.svRead('listSellers', (ctx) => sv.listSellers(ctx));
   }
-  async getSeller(_sellerId: string): Promise<SellerView> {
-    return this.notImplemented('getSeller');
+  async getSeller(sellerId: string): Promise<SellerView> {
+    return this.svRead('getSeller', (ctx) => sv.getSeller(ctx, sellerId));
   }
-  async setSellerVerification(_sellerId: string, _status: 'verified' | 'paused' | 'rejected', _note?: string): Promise<SellerView> {
-    return this.notImplemented('setSellerVerification');
+  async setSellerVerification(sellerId: string, status: 'verified' | 'paused' | 'rejected', note?: string): Promise<SellerView> {
+    return this.svWrite('setSellerVerification', (ctx) => sv.setSellerVerification(ctx, sellerId, status, note));
   }
-  async changeSellerPayoutAccount(_sellerId: string, _account: PayoutAccount): Promise<SellerView> {
-    return this.notImplemented('changeSellerPayoutAccount');
+  async changeSellerPayoutAccount(sellerId: string, account: PayoutAccount): Promise<SellerView> {
+    return this.svWrite('changeSellerPayoutAccount', (ctx) => sv.changeSellerPayoutAccount(ctx, sellerId, account));
   }
-  async raiseCnrAlert(_sellerId: string, _unitId: string, _detail: string): Promise<SellerView> {
-    return this.notImplemented('raiseCnrAlert');
+  async raiseCnrAlert(sellerId: string, unitId: string, detail: string): Promise<SellerView> {
+    return this.svWrite('raiseCnrAlert', (ctx) => sv.raiseCnrAlert(ctx, sellerId, unitId, detail));
   }
-  async listPayouts(_filter?: { planId?: string; sellerId?: string }): Promise<PayoutView[]> {
-    return this.notImplemented('listPayouts');
+  async listPayouts(filter?: { planId?: string; sellerId?: string }): Promise<PayoutView[]> {
+    return this.svRead('listPayouts', (ctx) => sv.listPayouts(ctx, filter));
   }
-  async retryPayout(_payoutId: string): Promise<PayoutView> {
-    return this.notImplemented('retryPayout');
+  async retryPayout(payoutId: string): Promise<PayoutView> {
+    return this.svWrite('retryPayout', (ctx) => sv.retryPayout(ctx, payoutId));
   }
-  async listOutbox(_planId?: string): Promise<OutboxMessage[]> {
-    return this.notImplemented('listOutbox');
+  async listOutbox(planId?: string): Promise<OutboxMessage[]> {
+    return this.svRead('listOutbox', (ctx) => sv.listOutbox(ctx, planId));
   }
-  async runAdverseAction(_action: AdverseAction, _detail?: string): Promise<PlanView> {
-    return this.notImplemented('runAdverseAction');
+  async runAdverseAction(action: AdverseAction, detail?: string): Promise<PlanView> {
+    return this.svWrite('runAdverseAction', (ctx) => sv.runAdverseAction(ctx, action, detail));
+  }
+
+  /** Runs the corridor's daily jobs on the current demo day (what `advanceClock` runs after moving the clock). */
+  async runDailyJobsNow(): Promise<sv.SvJobsReport> {
+    await this.state();
+    return sv.runSvDailyJobs(this.svContext());
   }
 
   /** Current wall-clock time in ms (injected for tests). */

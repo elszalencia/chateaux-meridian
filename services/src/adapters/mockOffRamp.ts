@@ -17,6 +17,7 @@ export class MockOffRampProvider implements OffRampProvider {
 
   async quote(req: OffRampQuoteRequest): Promise<OffRampQuote> {
     await this.runtime.call('offRamp.quote', 0.5);
+    if (req.usdTarget != null) throw new Error('USD-target quotes belong to the seller payout rails, not the COP off-ramp');
     const rate = spotAtOffset(this.runtime.clockOffset());
     const byCop = req.copTarget != null;
     const usdc = byCop ? usdToCoverCop(req.copTarget, rate).toFixed(7) : req.usdc;

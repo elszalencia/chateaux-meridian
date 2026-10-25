@@ -110,7 +110,23 @@
     "nothing_to_book": "There are no pending legs to hedge.",
     "nothing_to_pay_ahead": "There is no open quarter to pay ahead.",
     "plan_blocked": "This plan is on hold: payments and rate locks are paused for now.",
-    "installment_missed": "This installment is paid through your advisor, who confirms the amount."
+    "installment_missed": "This installment is paid through your advisor, who confirms the amount.",
+    "locks_disabled": "The installments of this plan are already in dollars: there is no rate to secure.",
+    "method_not_offered": "This way to pay is not available for your plan.",
+    "above_limit": "Cash payments are capped at USD 950 per reference. You can pay at the office or from your bank.",
+    "below_limit": "Cash payments have a minimum of USD 5 per reference.",
+    "state_excluded": "Cash payment is not available in your state. You can pay at the office or from your bank.",
+    "reference_expired": "Your reference expired. Request a new one to pay in cash.",
+    "reference_not_completed": "Your cash payment has not been confirmed yet. Once it is, your installment will be recorded.",
+    "not_due_yet": "This installment cannot be paid yet. We will let you know when the window opens.",
+    "insufficient_cash": "The amount received is less than the installment amount.",
+    "seller_unverified": "Your payment is recorded. Delivery to the seller waits until their verification is complete.",
+    "seller_paused": "Your payment is recorded. Delivery to the seller is paused while their account is reviewed.",
+    "seller_rejected": "Your payment is recorded. Delivery to the seller is stopped; your advisor will contact you.",
+    "seller_cooling_off": "Your payment is recorded. Delivery to the seller waits for a verification of their account.",
+    "cnr_alert": "Your payment is recorded. Delivery to the seller waits while we review a registry update on the property.",
+    "invalid_transition": "This action cannot be applied in the current state.",
+    "not_implemented": "This feature is not available yet."
   },
   "comprador": {
     "title": "Your installment plan",
@@ -584,7 +600,8 @@
     "payoutReturned": "The delivery to the trust was returned",
     "holdCleared": "Review finished",
     "refund": "Refund to the buyer",
-    "planCompleted": "Plan completed"
+    "planCompleted": "Plan completed",
+    "cnrLien": "New lien registered on the property (CNR)"
   },
   "corridors": {
     "co": {

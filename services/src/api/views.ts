@@ -3,6 +3,10 @@
 // Adverse events: `governanceView` folds the plan's governance row and policy events into what the
 // builder sees (state, reason, history) and what the buyer is told (`notices`, plain language, no
 // blame). A plan whose funds are blocked shows nothing payable.
+// Corridors: `installmentView` takes the plan's corridor. A corridor whose amount field already
+// holds the payment currency (USD cents) shows the amount with no rate, pays inside the config's
+// window before the due date, and shows `recibido` for a funded installment waiting for its due
+// date. With the default corridor every result is what it was before corridors existed.
 
 import type {
   Buyer,
@@ -32,10 +36,19 @@ import type {
   CurvePoint,
   Payment,
   SellerSummary,
+  PlanRow,
+  PlanDeskStatus,
+  PayoutView,
+  Payout,
+  Seller,
+  SellerUnit,
+  CounterSearchResult,
+  ShiftTotal,
+  Tender,
 } from '../domain/types';
-import { corridorIdOf } from '../corridors/index';
-import { compareISO, diffDays, quarterKey, yearOf } from '../domain/dates';
-import { GRACE_BUSINESS_DAYS, businessDaysLate, graceEndDate, isBeyondGrace, roundCop, roundUsd, usdDue } from '../lock/engine';
+import { DEFAULT_CORRIDOR, corridor, corridorIdOf, corridorOf, minorToMajor, type Corridor } from '../corridors/index';
+import { addDays, businessDaysBetweenIn, compareISO, diffDays, quarterKey, yearOf } from '../domain/dates';
+import { GRACE_BUSINESS_DAYS, businessDaysLate, graceEndDate, roundCop, roundUsd, usdDue } from '../lock/engine';
 import { defaultGovernance, fundsAllowed } from '../policy/transitions';
 import { reasonInfo } from '../policy/reasons';
 
@@ -47,11 +60,22 @@ function owes(i: Installment): boolean {
 export const RECON_ROUNDING_TOLERANCE_COP = 50;
 export const RECON_BASIS_TOLERANCE_COP = 1000;
 
+/** Past the grace period on the corridor's business-day calendar (the default corridor: the lock engine's rule). */
+export function beyondGraceIn(today: ISODate, dueDate: ISODate, c: Corridor): boolean {
+  return businessDaysBetweenIn(dueDate, today, c.holidays) > c.graceBusinessDays;
+}
+
+/** The amount field already holds the payment currency: no rate converts it. */
+export function paysInUsd(c: Corridor): boolean {
+  return c.currency === 'USD';
+}
+
 export function installmentView(
   i: Installment,
   today: ISODate,
   spot: number,
   offers: RenewalOffer[],
+  c: Corridor = corridor(DEFAULT_CORRIDOR),
 ): InstallmentView {
   const unpaid = owes(i);
   const isDue = unpaid && compareISO(today, i.dueDate) >= 0;
@@ -59,6 +83,8 @@ export function installmentView(
   const daysLate = isLate ? diffDays(i.dueDate, today) : 0;
   const bizLate = isLate ? businessDaysLate(today, i.dueDate) : 0;
   const offer = i.status === 'open' ? offers.find((o) => o.state === 'ofrecido' && o.planId === i.planId && o.idxs.includes(i.idx)) ?? null : null;
+  // Paid before the due date and waiting for the release on that date.
+  const funded = i.status === 'open' && i.fundedAt != null;
   const cellState: InstallmentView['cellState'] =
     i.status === 'released'
       ? 'pagado'
@@ -70,13 +96,18 @@ export function installmentView(
             ? 'no_pagado'
             : i.status === 'waived'
               ? 'condonado'
-              : offer
-                ? 'ofrecido'
-                : 'abierto';
-  const usdAtToday = roundUsd(usdDue(i.copDue, spot));
+              : funded
+                ? 'recibido'
+                : offer
+                  ? 'ofrecido'
+                  : 'abierto';
+  const direct = paysInUsd(c);
+  const usdAtToday = direct ? minorToMajor(i.copDue, c) : roundUsd(usdDue(i.copDue, spot));
   // Locked cells show the guaranteed amount, paid cells the amount actually paid, open cells today's rate.
   const usdShown = (i.status === 'locked' || i.status === 'released') && i.usdDue != null ? i.usdDue : usdAtToday;
-  const diffCop = i.status === 'locked' && i.lockedRate != null ? roundCop(usdShown * (i.lockedRate - spot)) : 0;
+  const diffCop = !direct && i.status === 'locked' && i.lockedRate != null ? roundCop(usdShown * (i.lockedRate - spot)) : 0;
+  // The pay window opens `payWindowDays` before the due date (0 in the default corridor: on the due date).
+  const windowOpen = compareISO(today, addDays(i.dueDate, -c.payWindowDays)) >= 0;
   return {
     ...i,
     number: i.idx + 1,
@@ -92,9 +123,9 @@ export function installmentView(
     usdShown,
     diffCop,
     // A missed installment is paid once it is cured (contract rule), so it is not payable here.
-    payable: unpaid && isDue && i.status !== 'missed',
+    payable: unpaid && windowOpen && i.status !== 'missed' && !funded,
     offerId: offer?.id ?? null,
-    lateInGrace: isLate && i.status !== 'missed' && !isBeyondGrace(today, i.dueDate),
+    lateInGrace: isLate && i.status !== 'missed' && !beyondGraceIn(today, i.dueDate, c),
   };
 }
 
@@ -126,7 +157,8 @@ export function policyEventView(e: PolicyEvent): PolicyEventView {
  * The plan's adverse-event state. `gov` may be missing (plans written before schema version 2, or a
  * store seeded before governance existed): the plan is then active under the default policy.
  */
-export function governanceView(args: { planId: string; gov?: PlanGovernance; installments: Installment[]; events?: PolicyEvent[]; today: ISODate }): GovernanceView {
+export function governanceView(args: { planId: string; gov?: PlanGovernance; installments: Installment[]; events?: PolicyEvent[]; today: ISODate; corridor?: Corridor }): GovernanceView {
+  const c = args.corridor ?? corridor(DEFAULT_CORRIDOR);
   const gov = args.gov ?? defaultGovernance(args.planId);
   const rows = args.installments.filter((i) => i.planId === args.planId).sort((a, b) => a.idx - b.idx);
   const reasonKey = reasonInfo(gov.reasonCode).key;
@@ -141,7 +173,7 @@ export function governanceView(args: { planId: string; gov?: PlanGovernance; ins
     for (const i of rows) {
       if (i.status === 'missed') {
         notices.push({ kind: 'missed', installmentNumber: i.idx + 1, dueDate: i.dueDate, graceEnds: null, reasonKey: reasonInfo(100).key, since: null, heldUsd: null });
-      } else if (owes(i) && compareISO(args.today, i.dueDate) > 0 && !isBeyondGrace(args.today, i.dueDate)) {
+      } else if (owes(i) && compareISO(args.today, i.dueDate) > 0 && !beyondGraceIn(args.today, i.dueDate, c)) {
         notices.push({ kind: 'late_in_grace', installmentNumber: i.idx + 1, dueDate: i.dueDate, graceEnds: graceEndDate(i.dueDate), reasonKey: 'none', since: null, heldUsd: null });
       }
     }
@@ -182,11 +214,12 @@ export function buildPlanView(args: {
   seller?: SellerSummary | null;
   payments?: Payment[];
 }): PlanView {
-  const governance = governanceView({ planId: args.plan.id, gov: args.governance, installments: args.installments, events: args.events, today: args.today });
+  const c = corridorOf(args.plan);
+  const governance = governanceView({ planId: args.plan.id, gov: args.governance, installments: args.installments, events: args.events, today: args.today, corridor: c });
   const rows = args.installments
     .filter((i) => i.planId === args.plan.id)
     .sort((a, b) => a.idx - b.idx)
-    .map((i) => installmentView(i, args.today, args.spot, args.offers))
+    .map((i) => installmentView(i, args.today, args.spot, args.offers, c))
     .map((i) => (governance.fundsBlocked ? { ...i, payable: false } : i));
   const offers = args.offers.filter((o) => o.planId === args.plan.id);
   return {
@@ -294,9 +327,153 @@ export function buildUnitSummaries(args: {
         installments: rows,
         events: args.events,
         today: args.today,
+        corridor: corridorOf(plan),
       }),
     };
   });
+}
+
+// ---------- Office portals: desk rows, payouts, counter search, shift total ----------
+
+/**
+ * The desk status of a plan: the governance state first (pause, cancellation, completion, default
+ * or delinquency), then the installments (anything unpaid past grace is `en_mora`, anything late
+ * inside grace is `atrasado`), otherwise `activo`.
+ */
+export function planDeskStatus(gov: GovernanceView, installments: Installment[], today: ISODate, c: Corridor = corridor(DEFAULT_CORRIDOR)): PlanDeskStatus {
+  if (gov.state === 'on_hold') return 'en_pausa';
+  if (gov.state === 'cancelled') return 'cancelado';
+  if (gov.state === 'completed') return 'completado';
+  if (gov.state === 'defaulted' || gov.state === 'delinquent') return 'en_mora';
+  const unpaidLate = installments.filter((i) => owes(i) && compareISO(today, i.dueDate) > 0);
+  if (installments.some((i) => i.status === 'missed') || unpaidLate.some((i) => beyondGraceIn(today, i.dueDate, c))) return 'en_mora';
+  if (unpaidLate.length > 0) return 'atrasado';
+  return 'activo';
+}
+
+export function buildPlanRows(args: {
+  plans: Plan[];
+  buyers: Buyer[];
+  units: Unit[];
+  installments: Installment[];
+  sellers: Seller[];
+  today: ISODate;
+  spot: number;
+  governance?: PlanGovernance[];
+  events?: PolicyEvent[];
+}): PlanRow[] {
+  return args.plans.map((plan) => {
+    const c = corridorOf(plan);
+    const rows = args.installments.filter((i) => i.planId === plan.id).sort((a, b) => a.idx - b.idx);
+    const governance = governanceView({ planId: plan.id, gov: args.governance?.find((g) => g.planId === plan.id), installments: rows, events: args.events, today: args.today, corridor: c });
+    const views = rows.map((i) => installmentView(i, args.today, args.spot, [], c));
+    const next = views.filter(owes)[0] ?? null;
+    const seller = plan.sellerId ? args.sellers.find((s) => s.id === plan.sellerId) : undefined;
+    return {
+      plan,
+      buyer: args.buyers.find((b) => b.id === plan.buyerId)!,
+      unit: args.units.find((u) => u.id === plan.unitId)!,
+      corridor: c.id,
+      sellerName: seller?.tradeName ?? null,
+      status: planDeskStatus(governance, rows, args.today, c),
+      governance,
+      paidCount: rows.filter((i) => i.status === 'released').length,
+      nextDueDate: next?.dueDate ?? null,
+      nextUsd: next ? next.usdShown : null,
+      lateCount: views.filter((i) => i.isLate).length,
+    };
+  });
+}
+
+/** The reconciliation line to the cent: paid − fee = to seller. */
+export function payoutReconciles(p: Pick<Payout, 'usdPaid' | 'feeUsd' | 'usdToSeller'>): boolean {
+  return Math.round(p.usdPaid * 100) - Math.round(p.feeUsd * 100) === Math.round(p.usdToSeller * 100);
+}
+
+export function buildPayoutViews(args: { payouts: Payout[]; plans: Plan[]; buyers: Buyer[]; units: Unit[]; sellers: Seller[] }): PayoutView[] {
+  return args.payouts
+    .map((p) => {
+      const plan = args.plans.find((x) => x.id === p.planId);
+      const buyer = plan ? args.buyers.find((b) => b.id === plan.buyerId) : undefined;
+      const unit = plan ? args.units.find((u) => u.id === plan.unitId) : undefined;
+      const seller = args.sellers.find((s) => s.id === p.sellerId);
+      return {
+        ...p,
+        buyerName: buyer?.name ?? p.planId,
+        sellerName: seller?.tradeName ?? p.sellerId,
+        unitLabel: unit ? `${unit.unitName} ${unit.unitCode}` : '',
+        number: p.idx + 1,
+        corridor: corridorIdOf(plan),
+        reconciles: payoutReconciles(p),
+      } satisfies PayoutView;
+    })
+    .sort((a, b) => (b.sentAt ?? '').localeCompare(a.sentAt ?? '') || a.planId.localeCompare(b.planId) || b.idx - a.idx);
+}
+
+/** Lower-case, no accents, so "Hernandez" finds "Hernández". */
+export function normalizeName(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+export function digitsOf(s: string): string {
+  return s.replace(/\D/g, '');
+}
+
+/**
+ * Counter search: a query of digits matches the phone number (any run of digits), anything else
+ * matches the buyer's name without case or accents. Each hit lists what is payable at the counter
+ * now (the corridor must offer `office_counter`), earliest first.
+ */
+export function counterSearch(
+  query: string,
+  args: { buyers: Buyer[]; plans: Plan[]; units: Unit[]; installments: Installment[]; today: ISODate; spot: number; governance?: PlanGovernance[] },
+): CounterSearchResult[] {
+  const q = query.trim();
+  if (!q) return [];
+  const digits = digitsOf(q);
+  const byPhone = digits.length > 0 && digits.length === q.replace(/[\s()+-]/g, '').length;
+  const name = normalizeName(q);
+  const hits = args.buyers.filter((b) => (byPhone ? digitsOf(b.phone).includes(digits) : normalizeName(b.name).includes(name)));
+  const out: CounterSearchResult[] = [];
+  for (const buyer of hits) {
+    for (const plan of args.plans.filter((p) => p.buyerId === buyer.id)) {
+      const c = corridorOf(plan);
+      const unit = args.units.find((u) => u.id === plan.unitId);
+      const rows = args.installments.filter((i) => i.planId === plan.id).sort((a, b) => a.idx - b.idx);
+      const gov = governanceView({ planId: plan.id, gov: args.governance?.find((g) => g.planId === plan.id), installments: rows, today: args.today, corridor: c });
+      const due = c.payMethods.includes('office_counter')
+        ? rows
+            .map((i) => installmentView(i, args.today, args.spot, [], c))
+            .filter((v) => v.payable)
+            .map((v) => ({ idx: v.idx, number: v.number, dueDate: v.dueDate, usdDue: v.usdShown, isLate: v.isLate, lateInGrace: v.lateInGrace }))
+        : [];
+      out.push({ buyer, plan, unitLabel: unit ? `${unit.unitName} ${unit.unitCode} · ${unit.project}` : plan.unitId, corridor: c.id, due, fundsBlocked: gov.fundsBlocked });
+    }
+  }
+  return out.sort((a, b) => a.buyer.name.localeCompare(b.buyer.name) || a.plan.id.localeCompare(b.plan.id));
+}
+
+/** Today's completed counter takings of one cashier at one office, by tender (USD, two decimals). */
+export function shiftTotal(args: { payments: Payment[]; plans: Plan[]; officeId: string; cashierId: string; date: ISODate }): ShiftTotal {
+  const rows = args.payments
+    .filter((p) => p.method === 'office_counter' && p.status === 'completed' && p.officeId === args.officeId && p.cashierId === args.cashierId && (p.receivedAt ?? p.createdAt).slice(0, 10) === args.date)
+    .sort((a, b) => (a.receivedAt ?? a.createdAt).localeCompare(b.receivedAt ?? b.createdAt));
+  const byTender: Record<Tender, { count: number; usd: number }> = { cash: { count: 0, usd: 0 }, card: { count: 0, usd: 0 } };
+  let cents = 0;
+  for (const p of rows) {
+    const plan = args.plans.find((x) => x.id === p.planId);
+    const c = corridorOf(plan);
+    const paidCents = Math.round(minorToMajor(p.amount + p.fee, c) * 100);
+    const tender = p.tender ?? 'cash';
+    byTender[tender].count += 1;
+    byTender[tender].usd = Math.round(byTender[tender].usd * 100 + paidCents) / 100;
+    cents += paidCents;
+  }
+  return { officeId: args.officeId, cashierId: args.cashierId, date: args.date, byTender, totalUsd: cents / 100, payments: rows };
 }
 
 const QUARTER_MONTHS = ['ene–mar', 'abr–jun', 'jul–sep', 'oct–dic'];

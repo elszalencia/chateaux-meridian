@@ -110,7 +110,23 @@
     "nothing_to_book": "No hay tramos pendientes por cubrir.",
     "nothing_to_pay_ahead": "No hay un trimestre abierto para pagar por adelantado.",
     "plan_blocked": "Este plan está en pausa: por ahora no se reciben pagos ni se aseguran cuotas.",
-    "installment_missed": "Esta cuota se paga a través de tu asesor, que te confirma el monto."
+    "installment_missed": "Esta cuota se paga a través de tu asesor, que te confirma el monto.",
+    "locks_disabled": "En este plan las cuotas ya están en dólares: no hace falta asegurar una tasa.",
+    "method_not_offered": "Esta forma de pago no está disponible para tu plan.",
+    "above_limit": "El pago en efectivo tiene un máximo de USD 950 por referencia. Puedes pagar en la oficina o desde tu banco.",
+    "below_limit": "El pago en efectivo tiene un mínimo de USD 5 por referencia.",
+    "state_excluded": "El pago en efectivo no está disponible en tu estado. Puedes pagar en la oficina o desde tu banco.",
+    "reference_expired": "Tu referencia venció. Pide una nueva para pagar en efectivo.",
+    "reference_not_completed": "Todavía no nos confirman tu pago en efectivo. Cuando lo hagan, tu cuota quedará registrada.",
+    "not_due_yet": "Esta cuota todavía no se puede pagar. Te avisaremos cuando se abra el plazo.",
+    "insufficient_cash": "El monto recibido es menor que el monto de la cuota.",
+    "seller_unverified": "Tu pago quedó registrado. La entrega al vendedor espera que termine su verificación.",
+    "seller_paused": "Tu pago quedó registrado. La entrega al vendedor está en pausa mientras se revisa su cuenta.",
+    "seller_rejected": "Tu pago quedó registrado. La entrega al vendedor está detenida; tu asesor te contactará.",
+    "seller_cooling_off": "Tu pago quedó registrado. La entrega al vendedor espera una verificación de su cuenta.",
+    "cnr_alert": "Tu pago quedó registrado. La entrega al vendedor espera mientras revisamos una novedad registral sobre la propiedad.",
+    "invalid_transition": "Esta acción no se puede aplicar en el estado actual.",
+    "not_implemented": "Esta función todavía no está disponible."
   },
   "comprador": {
     "title": "Tu plan de cuotas",
@@ -584,7 +600,8 @@
     "payoutReturned": "La entrega a la fiducia fue devuelta",
     "holdCleared": "Revisión terminada",
     "refund": "Devolución al comprador",
-    "planCompleted": "Plan completado"
+    "planCompleted": "Plan completado",
+    "cnrLien": "Nuevo gravamen inscrito sobre la propiedad (CNR)"
   },
   "corridors": {
     "co": {
