@@ -91,7 +91,6 @@
         "step2": "Show the number and hand over {usd} in cash.",
         "step3": "Keep the agent's receipt. We message you on WhatsApp when your installment is recorded.",
         "locator": "Find a {network} agent near you",
-        "locatorUrl": "https://www.moneygram.com/mgo/us/en/locations",
         "pendingNote": "Your installment is recorded only when the agent confirms the payment. Until then the reference shows as pending.",
         "demoTitle": "Demo control",
         "demoBody": "In the demo nobody goes to the agent. This button simulates {network} confirming the cash payment.",

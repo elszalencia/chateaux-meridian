@@ -40,7 +40,7 @@ for SQL readers; when the two disagree, `config/corridors.ts` is the source.
 | `views` | Which office views and buyer features exist (Constructora, Tesorería, lock, pay ahead, the CNR badge). |
 | `whatsappTemplates` | Message templates the corridor sends (mock WhatsApp channel). |
 | `reminderDaysBefore` | Days before the due date the reminder goes out. |
-| `moneyGram` | Cash-in limits, excluded states, reference lifetime and the pending alert; null without a cash network. |
+| `moneyGram` | Cash-in limits, excluded states, reference lifetime, the pending alert and the agent locator URL; null without a cash network. |
 | `chainEnv` | Names of the environment variables holding the instance's contract id and payee keys (server only; never values). |
 | `partners` | Seller-side partner and cash network shown on office screens, always marked "simulado". |
 
@@ -62,7 +62,7 @@ for SQL readers; when the two disagree, `config/corridors.ts` is the source.
 | views | constructora, tesorería, lock, payAhead | propertyVerification (CNR badge) |
 | whatsappTemplates | recordatorio, pago_recibido, pago_entregado, pago_atrasado, plan_en_pausa, renovacion_bloqueo | recordatorio, referencia_moneygram, pago_recibido, pago_entregado, pago_atrasado, plan_en_pausa |
 | reminderDaysBefore | 5 | 5 |
-| moneyGram | null | min 5, max 950 USD; excluded AK, HI, LA, NY; reference 60 min; pending alert 10 min |
+| moneyGram | null | min 5, max 950 USD; excluded AK, HI, LA, NY; reference 60 min; pending alert 10 min; locator https://www.moneygram.com/mgo/us/en/locations |
 | chainEnv | PAYMENT_PLAN_CONTRACT_ID, PAYEE_BACKEND_SECRET, PAYEE_BACKEND_PUBLIC | PAYMENT_PLAN_CONTRACT_ID_SV, PAYEE_BACKEND_SV_SECRET, PAYEE_BACKEND_SV_PUBLIC |
 | partners | Fidudavivienda | Davivienda Salvadoreño; cash network MoneyGram |
 

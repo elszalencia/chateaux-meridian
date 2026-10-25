@@ -4,7 +4,7 @@
 // reference; the counter shows the office and the phone to give; ACH runs the pay flow.
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { PLAN_DORIS, PLAN_ROXANA, type DemoApi, type PayOptionsView } from '@casa-puente/services';
+import { CORRIDORS, PLAN_DORIS, PLAN_ROXANA, type DemoApi, type PayOptionsView } from '@casa-puente/services';
 import { freshApi, renderWithProviders } from '../test-utils';
 import { PaySheet } from './PaySheet';
 
@@ -52,7 +52,9 @@ describe('PaySheet', () => {
     expect(screen.getByTestId('mg-reference')).toHaveTextContent('9062817345');
     expect(screen.getByTestId('mg-amount')).toHaveTextContent('USD 754,99');
     expect(screen.getByTestId('mg-countdown').textContent).toMatch(/^\d+:\d\d$/);
-    expect(screen.getByTestId('mg-locator')).toHaveAttribute('href', expect.stringMatching(/^https:\/\//));
+    // The locator comes from the corridor config, not from the dictionaries.
+    expect(screen.getByTestId('mg-locator')).toHaveAttribute('href', CORRIDORS.sv.moneyGram!.locatorUrl);
+    expect(CORRIDORS.sv.moneyGram!.locatorUrl).toMatch(/^https:\/\//);
     // Not credited while pending.
     expect((await api.getReceipts(PLAN_ROXANA)).some((r) => r.installmentIdx === 5)).toBe(false);
 

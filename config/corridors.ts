@@ -50,6 +50,8 @@ export interface MoneyGramLimits {
   referenceTtlMinutes: number;
   /** Minutes after which a still-pending cash-in is flagged on the office screens. */
   pendingAlertMinutes: number;
+  /** Public page where the buyer finds the nearest agent; the cash panel links to it. */
+  locatorUrl: string;
 }
 
 export interface Corridor {
@@ -151,7 +153,7 @@ export const CORRIDORS: Readonly<Record<CorridorId, Corridor>> = {
     views: { comprador: true, oficina: true, constructora: false, tesoreria: false, lock: false, payAhead: false, propertyVerification: true },
     whatsappTemplates: ['recordatorio', 'referencia_moneygram', 'pago_recibido', 'pago_entregado', 'pago_atrasado', 'plan_en_pausa'],
     reminderDaysBefore: 5,
-    moneyGram: { minUsd: 5, maxUsd: 950, excludedStates: ['AK', 'HI', 'LA', 'NY'], referenceTtlMinutes: 60, pendingAlertMinutes: 10 },
+    moneyGram: { minUsd: 5, maxUsd: 950, excludedStates: ['AK', 'HI', 'LA', 'NY'], referenceTtlMinutes: 60, pendingAlertMinutes: 10, locatorUrl: 'https://www.moneygram.com/mgo/us/en/locations' },
     chainEnv: { contractIdKey: 'PAYMENT_PLAN_CONTRACT_ID_SV', payeeSecretKey: 'PAYEE_BACKEND_SV_SECRET', payeePublicKey: 'PAYEE_BACKEND_SV_PUBLIC' },
     partners: { payoutPartner: 'Davivienda Salvadoreño', cashNetwork: 'MoneyGram', simulated: true },
   },

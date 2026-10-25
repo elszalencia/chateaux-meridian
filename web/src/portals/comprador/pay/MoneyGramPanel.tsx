@@ -121,17 +121,19 @@ export function MoneyGramPanel({ view, installment, option, onPaid }: { view: Pl
             <li>{tp('mg.step2', { usd: f.usd(option.totalUsd) })}</li>
             <li>{tp('mg.step3')}</li>
           </ol>
-          <a
-            href={tp('mg.locatorUrl')}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-testid="mg-locator"
-            className="inline-flex min-h-11 items-center gap-1 rounded-lg px-1 font-semibold text-brand-800 underline underline-offset-2 hover:bg-brand-50"
-          >
-            {tp('mg.locator', { network })}
-            <span className="sr-only"> {tp('newTab')}</span>
-            <span aria-hidden="true">↗</span>
-          </a>
+          {c.moneyGram && (
+            <a
+              href={c.moneyGram.locatorUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="mg-locator"
+              className="inline-flex min-h-11 items-center gap-1 rounded-lg px-1 font-semibold text-brand-800 underline underline-offset-2 hover:bg-brand-50"
+            >
+              {tp('mg.locator', { network })}
+              <span className="sr-only"> {tp('newTab')}</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+          )}
           <p className="text-sm text-ink-700">{tp('mg.pendingNote')}</p>
           <div className="rounded-lg border border-dashed border-warn-500 bg-warn-100/40 p-3">
             <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink-900">

@@ -91,7 +91,6 @@
         "step2": "Muestra el número y entrega {usd} en efectivo.",
         "step3": "Guarda el recibo del agente. Te avisamos por WhatsApp cuando tu cuota quede registrada.",
         "locator": "Buscar un agente {network} cerca de ti",
-        "locatorUrl": "https://www.moneygram.com/mgo/us/en/locations",
         "pendingNote": "Tu cuota queda registrada solo cuando el agente confirma el pago. Mientras tanto, la referencia aparece como pendiente.",
         "demoTitle": "Control de la demo",
         "demoBody": "En la demo nadie va al agente. Este botón simula que {network} confirma el pago en efectivo.",

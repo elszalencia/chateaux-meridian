@@ -14,6 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
+import { CORRIDORS } from '../config/corridors';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MIGRATIONS = path.join(ROOT, 'supabase', 'migrations');
@@ -223,8 +224,16 @@ async function main(): Promise<void> {
   if (badPayout !== 'refused') fail('a payout with usd_to_seller != usd_paid - fee_usd was accepted');
   else console.log('ok   payouts refuse a broken reconciliation line');
 
+  // The corridors table mirrors config/corridors.ts for its cash-in settings.
+  const mirrored = await db.query<{ id: keyof typeof CORRIDORS; moneygram: unknown }>(`select id, moneygram from corridors order by id`);
+  // jsonb stores keys in its own order: compare with sorted keys.
+  const canon = (v: unknown): string => JSON.stringify(v, (_k, x: unknown) => (x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => a.localeCompare(b))) : x));
+  const drift = mirrored.rows.filter((r) => canon(r.moneygram) !== canon(CORRIDORS[r.id].moneyGram));
+  if (mirrored.rows.length !== Object.keys(CORRIDORS).length || drift.length > 0) fail(`corridors.moneygram differs from config/corridors.ts for ${drift.map((r) => r.id).join(', ') || 'the row count'}`);
+  else console.log('ok   corridors.moneygram matches config/corridors.ts');
+
   await db.close();
-  const summary = `${files.length} migrations applied, ${added.length} new policies, ${CASES.length * 2 + EXTRA.length + 2} checks, ${failures} failed (${((Date.now() - t0) / 1000).toFixed(1)} s)`;
+  const summary = `${files.length} migrations applied, ${added.length} new policies, ${CASES.length * 2 + EXTRA.length + 3} checks, ${failures} failed (${((Date.now() - t0) / 1000).toFixed(1)} s)`;
   if (failures > 0) {
     console.error(`check:db FAILED · ${summary}`);
     process.exit(1);
