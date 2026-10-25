@@ -1,5 +1,5 @@
 // WhatsApp outbox: every message the system would send (the channel is simulated), newest first,
-// with time, plan, template, the rendered text and its one deep link. Filterable by plan; the plan
+// with time, plan, template, the text (or, without template text, its parameters) and its one deep link. Filterable by plan; the plan
 // drawer reuses the list for one plan's history.
 
 import { useState } from 'react';
@@ -10,6 +10,7 @@ import { useFormat } from '../../../../app/format';
 import { useAsync } from '../../../../app/hooks';
 import { Badge, Card, EmptyState, ErrorState, Spinner } from '../../../../components/ui';
 import { useOT } from '../../shared/i18n';
+import { MessageText } from '../../shared/MessageText';
 import { Simulado } from '../../shared/Simulado';
 
 export function OutboxTab({ rows, refreshKey, onOpenPlan }: { rows: PlanRow[]; refreshKey: number; onOpenPlan: (id: string) => void }) {
@@ -80,7 +81,7 @@ export function OutboxList({
               {m.simulated && <Simulado />}
             </span>
           </div>
-          <p className="mt-2 whitespace-pre-line text-ink-900">{m.body}</p>
+          <MessageText message={m} />
           <p className="mt-1">
             <a href={m.link} className="font-semibold text-brand-800 underline">
               {ot('outbox.link', { link: m.link })}

@@ -273,7 +273,20 @@
         "renovacion_bloqueo": "Rate renewal"
       },
       "to": "To {to} · {locale}",
-      "link": "Link: {link}"
+      "link": "Link: {link}",
+      "summary": "{template} · message details (no template text in this build)",
+      "params": {
+        "n": "Installment",
+        "usd": "Amount",
+        "date": "Date",
+        "expiresAt": "Expires",
+        "ref": "Reference",
+        "seller": "Seller",
+        "name": "Name",
+        "reason": "Reason",
+        "since": "Since",
+        "graceEnds": "Grace period ends"
+      }
     },
     "actions": {
       "title": "Plan actions",

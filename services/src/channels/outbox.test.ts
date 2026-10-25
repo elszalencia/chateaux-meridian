@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { MemoryStore } from '../store/MemoryStore';
 import { emptySnapshot } from '../store/Store';
-import { MAX_BODY_CHARS, MessageLinkError, MessageTooLongError, OutboxChannel, deepLinkFor, dictionaryRenderer, interpolate, lookup, plainRenderer, type OutgoingMessage } from './MessageChannel';
+import { MAX_BODY_CHARS, MessageLinkError, MessageTooLongError, OutboxChannel, deepLinkFor, dictionaryRenderer, interpolate, isPlainBody, lookup, plainRenderer, type OutgoingMessage } from './MessageChannel';
 
 const STAMP = '2026-10-20T14:00:00.000Z';
 
@@ -69,6 +69,16 @@ describe('OutboxChannel', () => {
     expect(en.body).toBe(es.body); // en falls back to es
     const plain = await ch.send(reminder({ template: 'pago_atrasado' }));
     expect(plain.body.startsWith('[es] pago_atrasado')).toBe(true); // no dictionary entry: plain fallback
+  });
+
+  it('isPlainBody tells a message without template text from a rendered one', async () => {
+    const plain = await channel().ch.send(reminder());
+    expect(isPlainBody(plain)).toBe(true);
+    const dicts = { es: { whatsapp: { recordatorio: { body: 'Hola {name}, cuota {n}: {link}' } } }, en: {} };
+    const rendered = await channel(dictionaryRenderer(dicts)).ch.send(reminder());
+    expect(isPlainBody(rendered)).toBe(false);
+    // a fixed body (as the seed writes) is not the fallback either
+    expect(isPlainBody(await channel().ch.send(reminder({ body: 'Hola Roxana: #/c/plan-x/pagar' })))).toBe(false);
   });
 
   it('interpolate and lookup match the web app helpers', () => {

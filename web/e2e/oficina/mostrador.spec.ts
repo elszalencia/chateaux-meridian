@@ -52,6 +52,9 @@ test('cash payment from search to next customer: ≤ 6 taps, ≤ 90 s', async ({
 
   await tap('receipt-whatsapp');
   await expect(page.getByTestId('receipt-whatsapp-preview')).toContainText('+17035550187');
+  // No template text in this build: the template's name and its parameters, not the raw body.
+  await expect(page.getByTestId('receipt-whatsapp-preview').getByTestId('message-summary')).toContainText('Pago recibido');
+  await expect(page.getByTestId('receipt-whatsapp-preview')).not.toContainText('[es]');
 
   await tap('next-customer');
   await expect(page.getByTestId('counter-search')).toHaveValue('');

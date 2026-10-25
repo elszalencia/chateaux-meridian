@@ -273,7 +273,20 @@
         "renovacion_bloqueo": "Renovación de tasa"
       },
       "to": "Para {to} · {locale}",
-      "link": "Enlace: {link}"
+      "link": "Enlace: {link}",
+      "summary": "{template} · datos del mensaje (sin texto de plantilla en esta versión)",
+      "params": {
+        "n": "Cuota",
+        "usd": "Monto",
+        "date": "Fecha",
+        "expiresAt": "Vence",
+        "ref": "Referencia",
+        "seller": "Vendedor",
+        "name": "Nombre",
+        "reason": "Motivo",
+        "since": "Desde",
+        "graceEnds": "Fin del periodo de gracia"
+      }
     },
     "actions": {
       "title": "Acciones sobre el plan",

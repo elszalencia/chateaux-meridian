@@ -11,6 +11,7 @@ import { useAction } from '../../../app/hooks';
 import { ErrorState, SpinnerIcon } from '../../../components/ui';
 import { useOT } from '../shared/i18n';
 import { useMoney } from '../shared/money';
+import { MessageText } from '../shared/MessageText';
 import { Simulado } from '../shared/Simulado';
 import type { DueItem } from './BuyerCard';
 
@@ -103,9 +104,10 @@ export function CounterReceipt({ result, item, payment, receipt, office, onNext 
             </button>
             {send.status === 'error' && <ErrorState error={send.error} onRetry={() => void send.run()} compact />}
             {send.result && (
-              <p data-testid="receipt-whatsapp-preview" role="status" className="rounded-xl bg-ink-50 px-4 py-3 text-sm text-ink-700">
-                {ot('mostrador.receipt.whatsappTo', { to: send.result.to, template: ot(`outbox.template.${send.result.template}`), link: send.result.link })}
-              </p>
+              <div data-testid="receipt-whatsapp-preview" role="status" className="rounded-xl bg-ink-50 px-4 py-3 text-sm text-ink-700">
+                <p>{ot('mostrador.receipt.whatsappTo', { to: send.result.to, template: ot(`outbox.template.${send.result.template}`), link: send.result.link })}</p>
+                <MessageText message={send.result} />
+              </div>
             )}
           </div>
           <button type="button" data-testid="next-customer" onClick={onNext} className="min-h-16 w-full rounded-xl bg-brand-700 px-6 text-2xl font-bold text-white active:bg-brand-800">

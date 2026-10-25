@@ -64,6 +64,15 @@ export const plainRenderer: TemplateRenderer = (template, locale, params) => {
 };
 
 /**
+ * True when a message has no template text: its body is the plain fallback for its own template,
+ * locale and parameters. Office screens then show the template's name and its parameters instead
+ * of that raw body.
+ */
+export function isPlainBody(m: Pick<OutboxMessage, 'template' | 'locale' | 'params' | 'body'>): boolean {
+  return m.body === plainRenderer(m.template, m.locale, m.params);
+}
+
+/**
  * Renders `whatsapp.<template>.body` from the given dictionaries (es first, then en, then the plain
  * fallback), with the same interpolation the web app uses.
  */
