@@ -118,3 +118,16 @@ test('every interactive control on the counter is at least 44 px tall', async ({
   );
   expect(small).toEqual([]);
 });
+test('every office name fits the office dropdown at 1180 px', async ({ page }) => {
+  await openCounter(page);
+  const cut = await page.getByTestId('counter-office').evaluate((el) => {
+    const sel = el as HTMLSelectElement;
+    const cs = getComputedStyle(sel);
+    const ctx = document.createElement('canvas').getContext('2d')!;
+    ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    // Room for the text: the content box less the native arrow (about 24 px).
+    const room = sel.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 24;
+    return [...sel.options].filter((o) => ctx.measureText(o.text).width > room).map((o) => o.text);
+  });
+  expect(cut).toEqual([]);
+});

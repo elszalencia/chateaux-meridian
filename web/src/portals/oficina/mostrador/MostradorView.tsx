@@ -40,7 +40,7 @@ export default function MostradorView() {
   }, []);
 
   return (
-    <div data-testid="mostrador" className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div data-testid="mostrador" className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,26rem)]">
       <h2 className="sr-only">{ot('mostrador.heading')}</h2>
       <div className="min-w-0 space-y-4">
         {offices.status === 'error' && <ErrorState error={offices.error} onRetry={offices.reload} />}
