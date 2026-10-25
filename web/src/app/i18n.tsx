@@ -11,18 +11,19 @@ export type Lang = 'es' | 'en';
 type Dict = Record<string, unknown>;
 
 // Namespace files web/src/i18n/{es,en}/<namespace>.json are merged into the base dictionary, so
-// parallel workstreams add keys without touching es.json / en.json. The base file wins on a clash.
+// parallel workstreams add keys without touching es.json / en.json. The base file wins on a clash,
+// at every depth; tests/i18n.test.ts fails on any clash, so this rule never decides what users see.
 const NAMESPACES = import.meta.glob<Dict>('../i18n/*/*.json', { eager: true, import: 'default' });
 
 function isDict(v: unknown): v is Dict {
   return !!v && typeof v === 'object' && !Array.isArray(v);
 }
 
-function mergeDict(base: Dict, extra: Dict): Dict {
+export function mergeDict(base: Dict, extra: Dict): Dict {
   const out: Dict = { ...base };
   for (const [k, v] of Object.entries(extra)) {
     const cur = out[k];
-    if (isDict(cur) && isDict(v)) out[k] = mergeDict(v, cur);
+    if (isDict(cur) && isDict(v)) out[k] = mergeDict(cur, v);
     else if (!(k in out)) out[k] = v;
   }
   return out;

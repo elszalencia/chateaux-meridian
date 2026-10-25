@@ -1,12 +1,12 @@
 // Criterion 12: buyer screens contain none of: wallet, USDC, token, blockchain, hash, Stellar.
 // Scans the buyer view components, the shared shell and primitives rendered on buyer screens, and
-// the dictionary namespaces those screens use (comprador, app, common, states, errors, demo, and
-// reasons, which the buyer's adverse-event notices quote).
+// the dictionary namespaces those screens use (comprador, app, common, states, errors, demo,
+// reasons, which the buyer's adverse-event notices quote, and whatsapp, the buyer's messages), in
+// the merged dictionaries, so the namespace files in i18n/{es,en}/ are covered too.
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import es from '../i18n/es.json';
-import en from '../i18n/en.json';
+import { DICTS } from '../app/i18n';
 
 const FORBIDDEN = /\b(wallet|billetera|usdc|token|blockchain|hash|stellar|cripto|crypto)\b/i;
 const SRC = path.resolve(__dirname, '..');
@@ -39,9 +39,9 @@ describe('no crypto vocabulary on buyer screens', () => {
   });
 
   it('dictionary namespaces used by buyer screens (ES and EN)', () => {
-    const namespaces = ['comprador', 'app', 'common', 'states', 'errors', 'demo', 'reasons'];
+    const namespaces = ['comprador', 'app', 'common', 'states', 'errors', 'demo', 'reasons', 'whatsapp'];
     const hits: string[] = [];
-    for (const [lang, dict] of Object.entries({ es, en })) {
+    for (const [lang, dict] of Object.entries(DICTS)) {
       for (const ns of namespaces) {
         const text = JSON.stringify((dict as Record<string, unknown>)[ns] ?? {});
         const m = FORBIDDEN.exec(text);

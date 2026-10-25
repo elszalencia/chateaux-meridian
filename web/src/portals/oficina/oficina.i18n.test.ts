@@ -1,12 +1,12 @@
-// Office namespace guards: ES and EN have the same keys; every `ot('…')` key used by the office
-// components resolves in both; USDC appears only in Vendedores and Pagos al vendedor; no component
+// Office namespace guards: USDC appears only in Vendedores and Pagos al vendedor; no component
 // branches on a country literal (criterion 5); no hard-coded country names in the office code.
+// Key resolution (`ot('…')` included) and ES/EN parity are checked in tests/i18n.test.ts.
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import es from '../../i18n/es/oficina.json';
 import en from '../../i18n/en/oficina.json';
-import { DICTS, lookup } from '../../app/i18n';
+import { lookup } from '../../app/i18n';
 
 type Dict = Record<string, unknown>;
 const DIR = __dirname;
@@ -28,25 +28,6 @@ function sources(dir = DIR, out: string[] = []): string[] {
 }
 
 describe('oficina dictionaries', () => {
-  it('ES and EN have identical key sets', () => {
-    expect(flatten(es as Dict).sort()).toEqual(flatten(en as Dict).sort());
-  });
-
-  it('every ot() key used in the office components resolves in ES and EN', () => {
-    const missing: string[] = [];
-    const re = /\bot\(\s*['"`]([\w.-]+)(?:['"`]|\$\{)/g;
-    for (const f of sources()) {
-      for (const m of fs.readFileSync(f, 'utf8').replace(/^\s*\/\/.*$/gm, '').matchAll(re)) {
-        const key = `oficina.${m[1]!}`;
-        for (const lang of ['es', 'en'] as const) {
-          const ok = key.endsWith('.') ? flatten(DICTS[lang] as Dict).some((k) => k.startsWith(key)) : lookup(DICTS[lang] as Dict, key) !== undefined;
-          if (!ok) missing.push(`${lang}: ${path.relative(DIR, f)}: ${key}`);
-        }
-      }
-    }
-    expect(missing).toEqual([]);
-  });
-
   it('USDC appears only under Vendedores and Pagos al vendedor', () => {
     for (const dict of [es, en]) {
       const hits = flatten(dict as Dict).filter((k) => /usdc/i.test(String(lookup(dict as Dict, k))));
