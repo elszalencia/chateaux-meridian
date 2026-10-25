@@ -9,7 +9,7 @@ import { useDemo } from '../app/demo';
 import { useFormat } from '../app/format';
 import { useAsync } from '../app/hooks';
 import { useT } from '../app/i18n';
-import { useBuyerPlan, useRoute } from '../app/router';
+import { navigateTo, useBuyerPlan, useFullRoute } from '../app/router';
 import { Button } from './ui';
 import { api, DEMO_MODE } from '../app/api';
 
@@ -43,7 +43,8 @@ export function DemoBar() {
   const f = useFormat();
   const demo = useDemo();
   const [resetMs, setResetMs] = useState<number | null>(null);
-  const [view] = useRoute();
+  const route = useFullRoute();
+  const view = route.view;
 
   return (
     <div role="region" aria-label={t('demo.bar')} data-testid="demo-bar" className="border-b border-warn-500/40 bg-warn-100/60">
@@ -56,7 +57,12 @@ export function DemoBar() {
             aria-label={t('demo.corridor')}
             className="min-h-9 rounded-md border border-ink-300 bg-white px-2 text-sm text-ink-900"
             value={demo.corridor}
-            onChange={(e) => demo.setCorridor(e.target.value as typeof demo.corridor)}
+            onChange={(e) => {
+              demo.setCorridor(e.target.value as typeof demo.corridor);
+              // The bar follows the plan on screen: a buyer plan of the other corridor gives way to
+              // the chosen corridor's default buyer.
+              if (route.view === 'comprador' && route.planId) navigateTo('#/comprador');
+            }}
           >
             {CORRIDOR_IDS.map((c) => (
               <option key={c} value={c}>

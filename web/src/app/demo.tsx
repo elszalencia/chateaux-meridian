@@ -6,7 +6,9 @@ import type { CorridorId, DemoState } from '@casa-puente/services';
 import { api, clearPersistedDemo } from './api';
 
 // Presenter corridor: picks which office views the nav lists and which buyer opens by default.
-// Presentation chrome only; every product screen takes its corridor from the plan it shows.
+// Presentation chrome only; every product screen takes its corridor from the plan it shows, and a
+// screen showing one plan moves the presenter corridor to that plan's (useFollowPlanCorridor), so
+// the demo bar never names another corridor than the plan on screen.
 const CORRIDOR_KEY = 'chateaux-demo-corridor';
 
 function readCorridor(): CorridorId {
@@ -105,4 +107,14 @@ export function useDemo(): DemoValue {
   const ctx = useContext(DemoContext);
   if (!ctx) throw new Error('useDemo outside DemoProvider');
   return ctx;
+}
+
+/** A screen showing one plan passes its corridor; the presenter corridor follows it. */
+export function useFollowPlanCorridor(planCorridor: CorridorId | null | undefined): void {
+  const { corridor, setCorridor } = useDemo();
+  useEffect(() => {
+    if (planCorridor && planCorridor !== corridor) setCorridor(planCorridor);
+    // Only a different plan on screen moves the presenter corridor, never a manual switch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planCorridor]);
 }

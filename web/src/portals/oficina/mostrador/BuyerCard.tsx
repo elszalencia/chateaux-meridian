@@ -6,7 +6,7 @@
 
 import { CORRIDORS, addDays, type CounterSearchResult, type Office } from '@casa-puente/services';
 import { api } from '../../../app/api';
-import { useDemo } from '../../../app/demo';
+import { useDemo, useFollowPlanCorridor } from '../../../app/demo';
 import { useFormat } from '../../../app/format';
 import { useT } from '../../../app/i18n';
 import { useAsync } from '../../../app/hooks';
@@ -30,6 +30,7 @@ export function BuyerCard({ result, office, onCharge, onBack }: { result: Counte
   const money = useMoney();
   const { version } = useDemo();
   const plan = useAsync(() => api.getPlan(result.plan.id), [result.plan.id, version]);
+  useFollowPlanCorridor(result.corridor);
   const c = CORRIDORS[result.corridor];
   const wrongOffice = office != null && office.corridor !== result.corridor;
   const pv = plan.data;

@@ -5,7 +5,7 @@
 
 import { CORRIDORS, type InstallmentView, type OutboxMessage, type PaymentView, type PayoutView, type PlanView } from '@casa-puente/services';
 import { api } from '../../../../app/api';
-import { useDemo } from '../../../../app/demo';
+import { useDemo, useFollowPlanCorridor } from '../../../../app/demo';
 import { useFormat } from '../../../../app/format';
 import { useT } from '../../../../app/i18n';
 import { useAsync } from '../../../../app/hooks';
@@ -54,6 +54,7 @@ export function PlanDrawer({
   const detail = useAsync(() => loadPlan(planId), [planId, version, refreshKey]);
   const d = detail.data;
   const pv = d?.view;
+  useFollowPlanCorridor(pv?.corridor);
   const c = pv ? CORRIDORS[pv.corridor] : null;
 
   return (

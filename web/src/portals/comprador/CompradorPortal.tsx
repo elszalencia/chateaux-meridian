@@ -8,7 +8,7 @@
 import { useCallback } from 'react';
 import { DEFAULT_PLAN_BY_CORRIDOR } from '@casa-puente/services';
 import { api } from '../../app/api';
-import { useDemo } from '../../app/demo';
+import { useDemo, useFollowPlanCorridor } from '../../app/demo';
 import { useAsync } from '../../app/hooks';
 import { deepLinks, navigateTo, useFullRoute } from '../../app/router';
 import { ErrorState, Spinner } from '../../components/ui';
@@ -36,6 +36,7 @@ export default function CompradorPortal() {
   }, [reloadPlan, reloadReceipts, reloadPayouts]);
 
   const view = plan.data && plan.data.plan.id === planId ? plan.data : null;
+  useFollowPlanCorridor(view?.corridor);
   if (!view) return plan.status === 'error' ? <ErrorState error={plan.error} onRetry={plan.reload} /> : <Spinner />;
 
   const legacy = keepsLockScreens(corridorOfView(view));
