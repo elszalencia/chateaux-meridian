@@ -38,6 +38,8 @@ export interface CreateTestnetApiOptions extends MockRuntimeOptions {
   chains?: Partial<Record<CorridorId, ChainSource>>;
   /** Chain plan ids seeded by the deploy scripts, so the page is usable before the first reset. */
   chainPlans?: Record<string, number>;
+  /** Operator log, passed to DemoApi (reset reports plans the network refused to create). */
+  log?: (msg: string) => void;
   /** Real on-ramp and off-ramp providers; each one left out stays the mock. */
   rails?: (runtime: MockRuntime) => { onRamp?: OnRampProvider; offRamp?: OffRampProvider };
 }
@@ -125,7 +127,7 @@ export function createTestnetStack(opts: CreateTestnetApiOptions): TestnetStack 
     // Locks exist in Colombia only, so the lock provider is wired to that instance.
     lock: new ChainLockProvider(new InternalLockProvider(runtime, hedge, opts.now), bridge, resolve, opts.now),
   };
-  const api = new DemoApi({ store, providers, runtime, now: opts.now, chain: bridge, chains: bridges });
+  const api = new DemoApi({ store, providers, runtime, now: opts.now, chain: bridge, chains: bridges, log: opts.log });
   return { api, store, bridge, bridges, runtime };
 }
 

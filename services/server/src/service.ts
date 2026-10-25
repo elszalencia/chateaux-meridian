@@ -19,12 +19,10 @@
 import path from 'node:path';
 import { rpc } from '@stellar/stellar-sdk';
 import {
-  ADVERSE_DEMO_PLANS,
   CORRIDOR_IDS,
   ChainClient,
   DEFAULT_CORRIDOR,
   TestnetBridge,
-  buildSeed,
   checkChainPlans,
   corridorIdOf,
   createTestnetStack,
@@ -116,6 +114,7 @@ export class TestnetService {
       chains: bridges,
       chainPlans: cfg.chainPlans,
       persistence: this.persistence,
+      log: (m) => this.log(m),
       rails: (runtime) => {
         if (cfg.onRamp === 'sep24') {
           onRamp = new JournaledOnRamp(
@@ -367,56 +366,24 @@ export class TestnetService {
   }
 
   /**
-   * Re-seeds the demo. DemoApi.reset seeds the plans through the bridges; afterwards every
-   * corridor with an instance is checked once more: a seed plan of that corridor that has no chain
-   * id yet, or whose id the instance does not know, is seeded on that instance here and written
-   * into demo_state. In the normal case the check finds nothing to do.
+   * Re-seeds the demo. DemoApi.reset seeds every plan through the bridge of its own corridor and
+   * records, in demo_state, the plans the network refused to create (kept on their existing chain
+   * plan, or run off chain as "simulado"). A kept chain plan is read back here, so /health shows
+   * whether it still matches the seed.
    */
   async reset(): Promise<{ state: DemoState; elapsedMs: number }> {
-    const t0 = Date.now();
-    const r = await this.stack.api.reset();
-    const added = await this.seedMissingPlans();
-    const state = added > 0 ? await this.stack.api.getDemoState() : r.state;
-    const elapsedMs = added > 0 ? Date.now() - t0 : r.elapsedMs;
+    const before = (await this.stack.store.get('demo_state', 'singleton'))?.chainPlans ?? {};
+    const { state, elapsedMs } = await this.stack.api.reset();
+    const mapped = state.chainPlans ?? {};
+    const kept = Object.fromEntries(Object.entries(mapped).filter(([planId, id]) => before[planId] === id));
+    const checked = await checkChainPlans(kept, async (id, planId) => (await this.requireClient(planId)).getStatus(id));
+    this.pristine = Object.entries(mapped).map(([planId, chainPlanId]) => checked.find((c) => c.planId === planId) ?? { planId, chainPlanId, pristine: true, reason: '' });
+    // A reset cannot do more than this: a kept plan that no longer matches the seed is reported, not re-seeded.
     this.needsReset = false;
-    this.pristine = Object.entries(state.chainPlans ?? {}).map(([planId, chainPlanId]) => ({ planId, chainPlanId, pristine: true, reason: '' }));
-    this.log(`reset: plans re-seeded in ${(elapsedMs / 1000).toFixed(1)} s → ${JSON.stringify(state.chainPlans)}`);
+    for (const c of checked) this.log(`reset: ${c.planId} kept on chain as #${c.chainPlanId}, ${c.pristine ? 'in the step-1 state' : `NOT in the seed state (${c.reason})`}`);
+    for (const [planId, why] of Object.entries(state.simulatedPlans ?? {})) this.log(`reset: ${planId} runs off chain (${why})`);
+    this.log(`reset: done in ${(elapsedMs / 1000).toFixed(1)} s → ${JSON.stringify(mapped)}`);
     return { state, elapsedMs };
-  }
-
-  /** Seeds, on each instance, the seed plans of its corridor that the instance does not hold. Returns how many were seeded. */
-  async seedMissingPlans(): Promise<number> {
-    const seed = buildSeed();
-    const store = this.stack.store;
-    const state = await store.get('demo_state', 'singleton');
-    if (!state) return 0;
-    const chainPlans = { ...(state.chainPlans ?? {}) };
-    let added = 0;
-    for (const [id, bridge] of Object.entries(this.stack.bridges) as [CorridorId, ChainBridge][]) {
-      const plans = seed.plans.filter((p) => corridorIdOf(p) === id && !ADVERSE_DEMO_PLANS.includes(p.id));
-      const missing: typeof plans = [];
-      for (const plan of plans) {
-        const chainId = chainPlans[plan.id];
-        if (chainId == null) {
-          missing.push(plan);
-          continue;
-        }
-        const known = await bridge.getStatus(chainId).then(() => true, () => false);
-        if (!known) missing.push(plan);
-      }
-      await Promise.all(
-        missing.map(async (plan) => {
-          const installments = seed.installments.filter((i) => i.planId === plan.id);
-          const seedState = { locks: seed.locks.filter((l) => l.planId === plan.id), receipts: seed.receipts.filter((r) => r.planId === plan.id) };
-          const res = await bridge.seedPlan(plan, installments, seedState);
-          chainPlans[plan.id] = res.chainPlanId;
-          added += 1;
-          this.log(`reset: ${plan.id} seeded on the ${id} instance as chain plan #${res.chainPlanId} (${res.steps.length} transactions, ${(res.elapsedMs / 1000).toFixed(1)} s)`);
-        }),
-      );
-    }
-    if (added > 0) await store.upsert('demo_state', { ...state, chainPlans });
-    return added;
   }
 
   health(): Record<string, unknown> {

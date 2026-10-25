@@ -229,6 +229,12 @@ export interface DemoState {
   chainContractId?: string;
   /** Testnet mode: the contract instance of each corridor (`chainContractId` is the Colombia one). */
   chainContractIds?: Partial<Record<CorridorId, string>>;
+  /**
+   * Testnet mode: plans the last reset could not create on chain (the network refused the fee),
+   * keyed by demo plan id, with the logged reason. They run off chain, as in mock mode; office
+   * screens may mark them "simulado". Absent when every plan was created.
+   */
+  simulatedPlans?: Record<string, string>;
 }
 
 /**
