@@ -463,9 +463,9 @@ export function shiftTotal(args: { payments: Payment[]; plans: Plan[]; officeId:
   const byTender: Record<Tender, { count: number; usd: number }> = { cash: { count: 0, usd: 0 }, card: { count: 0, usd: 0 } };
   let cents = 0;
   for (const p of rows) {
+    // The counter takes dollars: what changed hands is the cash received less the change (US cents).
     const plan = args.plans.find((x) => x.id === p.planId);
-    const c = corridorOf(plan);
-    const paidCents = Math.round(minorToMajor(p.amount + p.fee, c) * 100);
+    const paidCents = p.amountReceived != null ? p.amountReceived - (p.changeDue ?? 0) : Math.round(minorToMajor(p.amount + p.fee, corridorOf(plan)) * 100);
     const tender = p.tender ?? 'cash';
     byTender[tender].count += 1;
     byTender[tender].usd = Math.round(byTender[tender].usd * 100 + paidCents) / 100;

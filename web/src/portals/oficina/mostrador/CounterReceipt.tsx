@@ -41,8 +41,9 @@ export function CounterReceipt({ result, item, payment, receipt, office, onNext 
     [ot('mostrador.receipt.fee'), money.usd(receipt.feeUsd)],
   ];
   if (payment.tender === 'cash' && payment.amountReceived != null) {
-    rows.push([ot('mostrador.receipt.received'), money.planMinor(payment.amountReceived, result.corridor)]);
-    rows.push([ot('mostrador.receipt.change'), money.planMinor(payment.changeDue ?? 0, result.corridor)]);
+    // Cash received and change are US cents in every corridor.
+    rows.push([ot('mostrador.receipt.received'), money.cents(payment.amountReceived)]);
+    rows.push([ot('mostrador.receipt.change'), money.cents(payment.changeDue ?? 0)]);
   }
 
   return (

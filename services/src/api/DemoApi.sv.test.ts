@@ -21,6 +21,7 @@ import {
   OFFICE_MAXI_WOODBRIDGE,
   PLAN_ANDRES,
   PLAN_DORIS,
+  PLAN_LUIS,
   PLAN_MARIA,
   PLAN_MARVIN,
   PLAN_OSCAR,
@@ -335,6 +336,40 @@ describe('counter', () => {
     expect(msg.template).toBe('pago_entregado');
     const entregado = (await api.listOutbox(PLAN_ROXANA)).filter((m) => m.template === 'pago_entregado' && m.params.n === 6);
     expect(entregado.length).toBeGreaterThanOrEqual(2); // the job's notice and the explicit resend
+  });
+});
+
+describe('counter in a corridor with an FX leg (Colombia)', () => {
+  const miami = { officeId: OFFICE_CHATEAUX_MIAMI, cashierId: 'cajero-mia' };
+
+  it('takes the locked USD amount in US cents, converts and releases it, and totals the shift in dollars', async () => {
+    const api = fast();
+    const before = (await api.getPlan(PLAN_ANDRES)).installments[4]!;
+    expect(before).toMatchObject({ status: 'locked', usdDue: 740.5, copDue: 2_562_500, payable: true });
+    // US cents, not pesos: one cent short is refused, the pesos due would be absurd as cents
+    await expect(api.takeCounterPayment({ planId: PLAN_ANDRES, idx: 4, tender: 'cash', amountReceived: 74_049, ...miami })).rejects.toMatchObject({ code: 'INSUFFICIENT_CASH' });
+    const steps: string[] = [];
+    const { payment, receipt } = await api.takeCounterPayment({ planId: PLAN_ANDRES, idx: 4, tender: 'cash', amountReceived: 80_000, ...miami }, (s) => steps.push(s));
+    expect(steps).toEqual(['recibido', 'convertido', 'entregado']);
+    expect(payment).toMatchObject({ method: 'office_counter', status: 'completed', tender: 'cash', amount: 2_562_500, fee: 0, amountReceived: 80_000, changeDue: 5_950, receiptId: receipt.id });
+    expect(receipt).toMatchObject({ planId: PLAN_ANDRES, installmentIdx: 4, usdPaid: 740.5, rateKind: 'locked', copDelivered: 2_562_500 });
+    expect((await api.getPlan(PLAN_ANDRES)).installments[4]).toMatchObject({ status: 'released', cellState: 'pagado' });
+    const shift = await api.getShiftTotal(miami);
+    expect(shift).toMatchObject({ totalUsd: 740.5, byTender: { cash: { count: 1, usd: 740.5 } } });
+    await expect(api.takeCounterPayment({ planId: PLAN_ANDRES, idx: 4, tender: 'cash', amountReceived: 80_000, ...miami })).rejects.toMatchObject({ code: 'ALREADY_PAID' });
+  });
+
+  it('an open installment is charged the quote for the exact pesos due; card takes exactly that', async () => {
+    const api = fast();
+    const before = (await api.getPlan(PLAN_LUIS)).installments[4]!;
+    expect(before).toMatchObject({ status: 'open', copDue: 4_093_125, payable: true });
+    const { payment, receipt } = await api.takeCounterPayment({ planId: PLAN_LUIS, idx: 4, tender: 'card', amountReceived: 0, ...miami });
+    expect(receipt).toMatchObject({ rateKind: 'spot', copDelivered: 4_093_125 });
+    expect(payment.amountReceived).toBe(Math.round(receipt.usdPaid * 100));
+    expect(payment.changeDue).toBe(0);
+    // what the counter screen shows (today's rate) is within a cent or two of the quote for the pesos
+    expect(Math.abs(receipt.usdPaid - before.usdShown)).toBeLessThan(0.05);
+    expect((await api.getShiftTotal(miami)).totalUsd).toBe(receipt.usdPaid);
   });
 });
 

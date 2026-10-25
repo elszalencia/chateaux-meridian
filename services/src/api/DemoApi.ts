@@ -79,6 +79,14 @@ export { ApiError, type ApiErrorCode } from './errors';
 
 export type ProgressFn = (completedStep: PayStep) => void;
 
+/** What the buyer owes for one installment of a corridor with an FX leg, and how it was priced. */
+interface FxCharge {
+  locked: boolean;
+  breakCostCop: number;
+  usdPaid: number;
+  spotQuote: OffRampQuote | null;
+}
+
 export interface CasaPuenteApi {
   getDemoState(): Promise<DemoState>;
   listBuyers(): Promise<Buyer[]>;
@@ -248,6 +256,13 @@ export class DemoApi implements CasaPuenteApi {
       runtime: this.runtime,
       nowMs: () => this.sessionClockMs(),
       today: async () => (await this.state()).today,
+      fx: {
+        charge: async (plan, row) => {
+          const s = await this.state();
+          const charge = await this.fxCharge(row);
+          return { usdPaid: charge.usdPaid, settle: (onProgress) => this.fxSettle(plan, row, charge, s, onProgress) };
+        },
+      },
       spot: () => this.spot(),
       chainPlanOf: (plan) => this.chainPlanOf(plan),
       onChain: (what, run) => this.onChain(what, run),
@@ -636,30 +651,38 @@ export class DemoApi implements CasaPuenteApi {
     await this.assertFundsAllowed(planId);
     if (row.status === 'missed' || row.status === 'waived') throw new ApiError('INSTALLMENT_MISSED', `installment is ${row.status}`);
 
+    const charge = await this.fxCharge(row);
+    await this.onRampDeposit(plan.buyerId, charge.usdPaid, `${plan.encargoRef}-M${idx + 1}`);
+    return this.fxSettle(plan, row, charge, s, onProgress);
+  }
+
+  /**
+   * What the buyer owes in USD for one installment of a corridor with an FX leg. A locked
+   * installment pays the guaranteed USD; an unlocked one is quoted by the exact COP due (plus any
+   * break cost) so the trust receives that amount to the peso and the USD leg is the smallest
+   * whole-cent amount covering it.
+   */
+  private async fxCharge(row: Installment): Promise<FxCharge> {
     const locked = row.status === 'locked' && row.usdDue != null && row.lockedRate != null;
     const breakCostCop = row.status === 'broken' ? row.breakCostCop ?? 0 : 0;
+    if (locked) return { locked, breakCostCop, usdPaid: row.usdDue!, spotQuote: null };
+    const spotQuote = await this.offRampQuote({ copTarget: row.copDue + breakCostCop });
+    return { locked, breakCostCop, usdPaid: Number(spotQuote.usdc), spotQuote };
+  }
 
-    // 1. Recibido: USD leaves the buyer's US account. A locked installment pays the guaranteed USD;
-    //    an unlocked one is quoted by the exact COP due (plus any break cost) so the trust receives
-    //    that amount to the peso and the USD leg is the smallest whole-cent amount covering it.
-    let spotQuote: OffRampQuote | null = null;
-    let usdPaid: number;
-    if (locked) {
-      usdPaid = row.usdDue!;
-    } else {
-      spotQuote = await this.offRampQuote({ copTarget: row.copDue + breakCostCop });
-      usdPaid = Number(spotQuote.usdc);
-    }
-    await this.onRampDeposit(plan.buyerId, usdPaid, `${plan.encargoRef}-M${idx + 1}`);
-    // Testnet: the on-ramped USD becomes test USDC in the buyer's account and is deposited into
-    // the plan's balance on chain before anything is converted.
+  /** Once the buyer's USD is in (on-ramp or office counter): deposit, convert, release, receipt. */
+  private async fxSettle(plan: Plan, row: Installment, charge: FxCharge, s: DemoState, onProgress?: ProgressFn): Promise<Receipt> {
+    const { locked, usdPaid, breakCostCop } = charge;
+    const idx = row.idx;
+    // 1. Recibido. Testnet: the buyer's USD is test USDC in the buyer's account and is deposited
+    //    into the plan's balance on chain before anything is converted.
     const stroops = DemoApi.stroopsFor(row, locked, usdPaid);
     const on = await this.chainPlanOf(plan);
     if (on) await this.onChain('deposit', () => on.chain.deposit(plan.buyerId, on.chainPlanId, stroops));
     onProgress?.('recibido');
 
     // 2. Convertido: USDC → COP through the off-ramp.
-    if (!spotQuote) spotQuote = await this.offRampQuote({ usdc: usdPaid.toFixed(7) });
+    const spotQuote = charge.spotQuote ?? (await this.offRampQuote({ usdc: usdPaid.toFixed(7) }));
     let { txId } = await this.offRampPay(spotQuote.quoteId, usdPaid, plan.encargoRef, `M${idx + 1}`);
     onProgress?.('convertido');
 

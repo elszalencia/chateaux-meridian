@@ -85,6 +85,8 @@ export interface SvContext {
   runtime: MockRuntime;
   /** The corridor's session clock in ms (the demo date plus the time elapsed in the session). */
   nowMs: () => number;
+  /** Corridors with an FX leg ('convertido' pay step): pricing in USD and the conversion that follows. */
+  fx: FxRail;
   today: () => Promise<ISODate>;
   spot: () => number;
   /** The plan's own corridor bridge and chain plan id, or null when the plan stays off chain. */
@@ -95,6 +97,15 @@ export interface SvContext {
   viewOf: (planId: string) => Promise<PlanView>;
   planBundle: (planId: string) => Promise<PlanBundle>;
   assertFundsAllowed: (planId: string) => Promise<void>;
+}
+
+/**
+ * The FX leg of a corridor that converts (Colombia), as the counter uses it: what the buyer owes in
+ * USD now (the locked amount, or the off-ramp quote for the exact pesos due) and, once the cash is
+ * in, the conversion, release and receipt the buyer's own payment would run.
+ */
+export interface FxRail {
+  charge(plan: Plan, row: Installment): Promise<{ usdPaid: number; settle: (onProgress?: ProgressFn) => Promise<Receipt> }>;
 }
 
 const round2 = (x: number): number => Math.round(x * 100) / 100;
@@ -434,9 +445,15 @@ export async function takeCounterPayment(
   assertMethodOffered(c, 'office_counter');
   if (office.corridor !== c.id) throw new ApiError('METHOD_NOT_OFFERED', `office ${office.id} serves corridor ${office.corridor}`);
   const row = await payableRow(ctx, b, a.idx);
+  // The counter takes dollars in every corridor: `amountReceived`, the amount due and the change
+  // are US cents. A corridor with an FX leg prices the installment in USD first (locked amount or
+  // the quote for the exact pesos); the others hold USD cents in the installment already.
+  const fx = c.paySteps.includes('convertido') ? await ctx.fx.charge(b.plan, row) : null;
+  const usdOwed = fx ? fx.usdPaid : minorToMajor(row.copDue, c);
   const fee = cents(c.feesUsd.office_counter);
-  const due = row.copDue + fee;
-  if (!Number.isInteger(a.amountReceived) || a.amountReceived < due) throw new ApiError('INSUFFICIENT_CASH', `received ${a.amountReceived}, due ${due} (minor units)`);
+  const due = cents(usdOwed) + fee;
+  // A card is charged exactly the amount due; cash must cover it.
+  if (a.tender === 'cash' && (!Number.isInteger(a.amountReceived) || a.amountReceived < due)) throw new ApiError('INSUFFICIENT_CASH', `received ${a.amountReceived}, due ${due} (US cents)`);
   const at = nowIso(ctx);
   const ticket = `${office.id.slice(0, 2).toUpperCase()}-${mockTxHash(`${a.planId}:${a.idx}:${at}`).slice(0, 8).toUpperCase()}`;
   const payment: Payment = {
@@ -451,6 +468,12 @@ export async function takeCounterPayment(
     receivedAt: at,
   };
   await ctx.store.upsert('payments', payment);
+  if (fx) {
+    const receipt = await fx.settle(onProgress);
+    const recorded: Payment = { ...payment, receiptId: receipt.id };
+    await ctx.store.upsert('payments', recorded);
+    return { payment: recorded, receipt };
+  }
   const { receipt } = await creditInstallment(ctx, { plan: b.plan, buyer: b.buyer, row, payment, onProgress });
   return { payment: (await ctx.store.get('payments', payment.id)) ?? payment, receipt };
 }

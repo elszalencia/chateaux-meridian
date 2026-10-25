@@ -336,7 +336,7 @@ export interface Payment {
   officeId: string | null;
   cashierId: string | null;
   tender: Tender | null;
-  /** Counter: cash handed over and change returned, minor units. */
+  /** Counter: cash handed over and change returned, in US cents for every corridor (the counter takes dollars). */
   amountReceived: number | null;
   changeDue: number | null;
   createdAt: ISODateTime;
