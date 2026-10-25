@@ -1,1 +1,194 @@
-{}
+{
+  "comprador": {
+    "portal": {
+      "simulated": "simulado",
+      "newTab": "(se abre en una pestaña nueva)",
+      "noFee": "Sin comisión",
+      "feeBreakdown": "Cuota {usd} + comisión {fee}",
+      "unitLabel": "{unit} · {project}",
+      "home": {
+        "planLine": "Plan {ref} · Vendedor: {seller}",
+        "priceLine": "Precio {price} · Prima {down} en {count} cuotas de {usd}",
+        "calendarSubtitle": "{count} cuotas mensuales de {usd}"
+      },
+      "property": {
+        "verified": "Propiedad verificada · CNR",
+        "inReview": "Verificación de la propiedad en revisión · CNR",
+        "checkedOn": "Revisado el {date}"
+      },
+      "next": {
+        "title": "Tu próximo pago",
+        "headline": "Pagar {usd} antes del {date}",
+        "installment": "Cuota {n} de {count}",
+        "pay": "Ver formas de pago",
+        "payHint": "Ver cómo pagar la cuota {n} de {usd}",
+        "opensOn": "Puedes pagarla desde el {date}.",
+        "blocked": "Los pagos están en pausa mientras se resuelve el aviso de abajo.",
+        "openReference": "Tienes una referencia de efectivo abierta para la cuota {n}: {ref}.",
+        "allPaid": "¡Pagaste todas tus cuotas!",
+        "allPaidBody": "No tienes pagos pendientes. Tus comprobantes siguen aquí abajo."
+      },
+      "cell": {
+        "amount": "Monto de la cuota",
+        "paidOn": "Pagada el",
+        "deliveredOn": "Entregada al vendedor el",
+        "opensOn": "Se puede pagar desde",
+        "received": "Recibimos tu pago. Lo entregamos al vendedor el {date}, en la fecha de la cuota."
+      },
+      "sheet": {
+        "intro": "Elige cómo quieres pagar. El monto incluye la comisión de cada forma de pago.",
+        "methodsLabel": "Formas de pago",
+        "where": "Dónde",
+        "time": "Cuánto tarda",
+        "fee": "Comisión {fee}",
+        "openReference": "Referencia abierta: {ref}",
+        "expiredReference": "Tu última referencia venció",
+        "back": "← Otras formas de pago",
+        "backHint": "Volver a la lista de formas de pago",
+        "notOpen": "La cuota {n} todavía no se puede pagar",
+        "notOpenBody": "Podrás pagarla desde el {date}. Vence el {due}. Te avisaremos por WhatsApp cuando se abra el plazo.",
+        "blocked": "Tu plan está en pausa",
+        "noMethods": "No hay formas de pago disponibles",
+        "noMethodsBody": "Escríbele a tu asesor y te ayudamos a pagar esta cuota."
+      },
+      "methods": {
+        "moneygram_cash": {
+          "name": "Efectivo en MoneyGram",
+          "where": "En un agente MoneyGram en EE. UU. (tiendas, farmacias, supermercados)",
+          "time": "Se registra cuando el agente confirma tu pago, normalmente en minutos"
+        },
+        "office_counter": {
+          "name": "En oficina o agencia",
+          "where": "En la oficina o agencia más cercana",
+          "time": "Se registra al momento de pagar en caja"
+        },
+        "ach": {
+          "name": "Desde tu banco (ACH)",
+          "where": "En línea, desde tu cuenta bancaria en EE. UU.",
+          "time": "Se registra al confirmar el débito"
+        }
+      },
+      "disabled": {
+        "above_limit": "El pago en efectivo admite hasta {max} por referencia. Paga esta cuota en la oficina o desde tu banco.",
+        "below_limit": "El pago en efectivo necesita al menos {min} por referencia. Paga esta cuota en la oficina o desde tu banco.",
+        "state_excluded": "El pago en efectivo no está disponible en tu estado. Paga en la oficina o desde tu banco.",
+        "method_not_offered": "Esta forma de pago no está disponible para tu plan.",
+        "plan_blocked": "Tu plan está en pausa: por ahora no se reciben pagos."
+      },
+      "mg": {
+        "intro": "Paga en efectivo con un número de referencia en cualquier agente {network}.",
+        "amount": "Entrega en efectivo",
+        "payTo": "Tu pago va para",
+        "payToHint": "Plan {ref}",
+        "howTo": "Genera tu número de referencia y llévalo al agente {network}. La referencia vale por 60 minutos.",
+        "request": "Generar referencia",
+        "requestHint": "Generar una referencia de pago en efectivo para la cuota {n}",
+        "reference": "Número de referencia",
+        "expiresIn": "Vence en",
+        "countdownLabel": "Tiempo restante de la referencia",
+        "expiresAt": "hasta {time}",
+        "step1": "Ve a un agente {network} y di que vas a pagar con número de referencia.",
+        "step2": "Muestra el número y entrega {usd} en efectivo.",
+        "step3": "Guarda el recibo del agente. Te avisamos por WhatsApp cuando tu cuota quede registrada.",
+        "locator": "Buscar un agente {network} cerca de ti",
+        "locatorUrl": "https://www.moneygram.com/mgo/us/en/locations",
+        "pendingNote": "Tu cuota queda registrada solo cuando el agente confirma el pago. Mientras tanto, la referencia aparece como pendiente.",
+        "demoTitle": "Control de la demo",
+        "demoBody": "En la demo nadie va al agente. Este botón simula que {network} confirma el pago en efectivo.",
+        "simulate": "Simular pago en el agente",
+        "simulateHint": "Simular que {network} confirma el pago en efectivo de esta referencia",
+        "expiredTitle": "Tu referencia venció",
+        "expiredBody": "La referencia {ref} ya no se puede usar. Pide una nueva para pagar en efectivo.",
+        "renew": "Nueva referencia",
+        "renewHint": "Pedir una nueva referencia de efectivo para la cuota {n}"
+      },
+      "counter": {
+        "agency": "Agencia autorizada más cercana",
+        "office": "Oficina más cercana",
+        "address": "{address}, {city}, {state}",
+        "hours": "Horario",
+        "officePhone": "Teléfono de la oficina",
+        "givePhone": "Dile este número al cajero",
+        "givePhoneHint": "Con tu número de teléfono encuentra tu plan y la cuota que toca.",
+        "amount": "Lleva",
+        "after": "Pagas en efectivo o con tarjeta. Al terminar, el cajero te entrega el comprobante y te lo enviamos por WhatsApp.",
+        "noOffice": "Todavía no tenemos una oficina asignada para ti",
+        "noOfficeBody": "Escríbele a tu asesor y te indica dónde pagar."
+      },
+      "ach": {
+        "amount": "Monto a debitar",
+        "source": "Débito ACH desde tu cuenta en EE. UU.",
+        "destination": "{target}: {seller}",
+        "destinationHint": "Plan {ref}",
+        "confirm": "Confirmar pago",
+        "confirmHint": "Confirmar el pago de la cuota {n} por {usd} desde tu banco"
+      },
+      "steps": {
+        "recibido": "Pago recibido",
+        "convertido": "Convertido",
+        "entregado": "Entregado a {seller}",
+        "on": "el {date}"
+      },
+      "done": {
+        "title": "Pago recibido · Cuota {n}",
+        "body": "¡Listo! Recibimos tu pago. Se entrega al vendedor el {date}.",
+        "bodyDelivered": "¡Listo! Recibimos tu pago y ya va en camino al vendedor.",
+        "close": "Volver a mi plan"
+      },
+      "receipt": {
+        "fee": "Comisión",
+        "usdToSeller": "USD para el vendedor",
+        "delivery": "Entrega al vendedor",
+        "method": "Forma de pago",
+        "seller": "Vendedor",
+        "unit": "Unidad"
+      },
+      "delivery": {
+        "pending": "Se entrega al vendedor en la fecha de la cuota",
+        "pendingOn": "Se entrega al vendedor el {date}",
+        "retenido": "En espera mientras {reason}",
+        "enviado": "Enviado al banco del vendedor",
+        "enviadoBy": "Enviado al banco del vendedor; se acredita a más tardar el {date}",
+        "en_transito": "En camino a la cuenta del vendedor",
+        "en_transitoBy": "En camino a la cuenta del vendedor; se acredita a más tardar el {date}",
+        "acreditado": "Acreditado en la cuenta del vendedor el {date}",
+        "transferido": "Entregado al vendedor el {date}",
+        "error": "El banco del vendedor rechazó la transferencia. Tu pago está seguro y lo estamos resolviendo."
+      },
+      "deliveryBadge": {
+        "pending": "Por entregar",
+        "retenido": "En espera",
+        "enviado": "Enviado",
+        "en_transito": "En camino",
+        "acreditado": "Acreditado",
+        "transferido": "Entregado",
+        "error": "En revisión"
+      },
+      "holdReasons": {
+        "seller_unverified": "el vendedor termina su verificación",
+        "seller_paused": "revisamos la cuenta del vendedor",
+        "seller_rejected": "tu asesor se comunica contigo",
+        "seller_cooling_off": "verificamos un cambio en la cuenta del vendedor",
+        "cnr_alert": "revisamos una novedad registral de la propiedad"
+      },
+      "receipts": {
+        "empty": "Aquí verás tus comprobantes",
+        "emptyBody": "Cuando pagues tu primera cuota, guardamos el comprobante aquí para que siempre lo tengas a mano.",
+        "open": "Ver el comprobante de la cuota {n}",
+        "openShort": "Ver comprobante",
+        "missing": "Aún no hay comprobante de la cuota {n}",
+        "missingBody": "Cuando pagues esa cuota, su comprobante aparecerá aquí."
+      },
+      "legend": {
+        "pagado": "Pagada y entregada al vendedor",
+        "abierto": "Por pagar",
+        "recibido": "Recibida (se entrega al vendedor en la fecha de la cuota)",
+        "no_pagado": "No pagada (habla con tu asesor)",
+        "condonado": "Condonada por el vendedor",
+        "bloqueado": "Bloqueada",
+        "ofrecido": "Ofrecida",
+        "roto": "Rota"
+      }
+    }
+  }
+}
