@@ -2,7 +2,7 @@
 // its load dependencies, so one click on the demo bar refreshes all three views.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { CorridorId, DemoState } from '@chateaux/services';
+import { CORRIDOR_IDS, DEFAULT_CORRIDOR, type CorridorId, type DemoState } from '@chateaux/services';
 import { api, clearPersistedDemo } from './api';
 
 // Presenter corridor: picks which office views the nav lists and which buyer opens by default.
@@ -13,9 +13,10 @@ const CORRIDOR_KEY = 'chateaux-demo-corridor';
 
 function readCorridor(): CorridorId {
   try {
-    return window.localStorage.getItem(CORRIDOR_KEY) === 'sv' ? 'sv' : 'co';
+    const stored = window.localStorage.getItem(CORRIDOR_KEY);
+    return CORRIDOR_IDS.find((c) => c === stored) ?? DEFAULT_CORRIDOR;
   } catch {
-    return 'co';
+    return DEFAULT_CORRIDOR;
   }
 }
 
