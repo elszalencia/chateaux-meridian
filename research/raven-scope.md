@@ -1,4 +1,4 @@
-# Casa Puente — What Stellar already provides vs. what we build (Raven research pass)
+# Chateaux — What Stellar already provides vs. what we build (Raven research pass)
 
 Research date: 2026-10-19 · Companion to `casa-puente-build-scope.md` (Build Scope v2) · Research only — no contract or app code was written in this pass.
 
@@ -833,7 +833,7 @@ Finding: across 3 `scout.searchResearch` scf-proposal queries, 2 `find_similar_s
 
 ## Build on — what we reuse as-is
 
-| What | Role in Casa Puente | Source (Raven id → URL) | Version / date | License | Confidence |
+| What | Role in Chateaux | Source (Raven id → URL) | Version / date | License | Confidence |
 |---|---|---|---|---|---|
 | **soroban-sdk + stellar-cli** | `payment_plan` contract; `token::Client` for USDC SAC (no `contractimport!` needed) | `scout.searchResearch` (release) → https://github.com/stellar/rs-soroban-sdk/releases/tag/v28.0.0 ; https://github.com/stellar/stellar-cli/releases/tag/v28.1.0 | SDK v28.0.0 (2026-09-18, Protocol 28) / v27.0.6; CLI v28.1.0 (2026-09-26). Pin to live mainnet protocol — check `getVersionInfo` | not visible in Raven — verify at repo (SDF repos expected Apache-2.0) | medium (version), high (rule: SDK major = protocol) |
 | **Stellar Asset Contract (USDC)** | The vault's token; `transfer` from buyer with `require_auth`, payout from contract balance with no extra auth | `stellarDocs` → https://developers.stellar.org/docs/tokens/stellar-asset-contract#contract-interface | docs 2026-09-08 | protocol feature | high |

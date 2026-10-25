@@ -1,6 +1,8 @@
-# Casa Puente
+# Chateaux
 
-Casa Puente lets a Colombian buyer living in the United States pay the down-payment installments on a Constructora Bolívar home from a US bank account, in one screen, at a dollar amount that Bolívar guarantees for the next one or three installments. The pesos land in the buyer's encargo fiduciario at Fidudavivienda and reconcile automatically, while Bolívar's treasury sees the forward hedge (booked with Davivienda) behind every guaranteed rate. The rail is Stellar: USDC, a Soroban contract that holds each plan's balance and schedule, and SEP anchors for the US on-ramp and the Colombian payout.
+Chateaux is derived from Casa Puente (tag casa-puente-final). Its history in this repository starts on 2026-10-25.
+
+Chateaux lets a Colombian buyer living in the United States pay the down-payment installments on a Constructora Bolívar home from a US bank account, in one screen, at a dollar amount that Bolívar guarantees for the next one or three installments. The pesos land in the buyer's encargo fiduciario at Fidudavivienda and reconcile automatically, while Bolívar's treasury sees the forward hedge (booked with Davivienda) behind every guaranteed rate. The rail is Stellar: USDC, a Soroban contract that holds each plan's balance and schedule, and SEP anchors for the US on-ramp and the Colombian payout.
 
 **Status:** Stage 3. The `payment_plan` contract (soroban-sdk 29.0.1, protocol 29, schema v2) adds adverse-event governance: delinquency, default, holds, cancellation with refunds only to the buyer, an admin pause, and a typed `AssetFrozen` error with a permissionless `hold_frozen` for an issuer freeze. The service layer adds a policy seam that applies only the grace and missed rules and records everything else for a person; the open business decisions are listed in [docs/ADVERSE_EVENTS.md](docs/ADVERSE_EVENTS.md).
 

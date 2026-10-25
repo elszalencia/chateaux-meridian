@@ -1,6 +1,6 @@
 # Architecture
 
-Casa Puente has four layers: a React app with three views, a framework-free TypeScript service layer, the `payment_plan` Soroban contract on Stellar, and the anchors that turn dollars into USDC in the US and USDC into pesos in Colombia. Every external dependency sits behind an interface, so the same UI and service code run on mocks (`DEMO_MODE=mock`) or against testnet (`DEMO_MODE=testnet`).
+Chateaux has four layers: a React app with three views, a framework-free TypeScript service layer, the `payment_plan` Soroban contract on Stellar, and the anchors that turn dollars into USDC in the US and USDC into pesos in Colombia. Every external dependency sits behind an interface, so the same UI and service code run on mocks (`DEMO_MODE=mock`) or against testnet (`DEMO_MODE=testnet`).
 
 ```mermaid
 flowchart LR

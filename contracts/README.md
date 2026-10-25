@@ -1,6 +1,6 @@
 # contracts/
 
-Soroban contracts for Casa Puente. Read `docs/STELLAR_NORMS.md` before changing versions: as of
+Soroban contracts for Chateaux. Read `docs/STELLAR_NORMS.md` before changing versions: as of
 2026-10-21 testnet and mainnet both run **protocol 29**, `soroban-sdk` is pinned at `=29.0.1`, the
 stellar CLI is 28.1.0 and the build target is `wasm32v1-none`.
 
