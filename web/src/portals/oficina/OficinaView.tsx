@@ -7,6 +7,7 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import { useT } from '../../app/i18n';
 import { useFullRoute, type OficinaSurface } from '../../app/router';
 import { Spinner } from '../../components/ui';
+import { useOT } from './shared/i18n';
 
 const Mostrador = lazy(() => import('./mostrador/MostradorView'));
 const Escritorio = lazy(() => import('./escritorio/EscritorioView'));
@@ -31,6 +32,7 @@ function readOverride(): OficinaSurface | null {
 
 export default function OficinaView() {
   const t = useT();
+  const ot = useOT();
   const route = useFullRoute();
   const [override, setOverride] = useState<OficinaSurface | null>(readOverride);
   const surface: OficinaSurface = route.surface ?? override ?? defaultSurface();
@@ -52,7 +54,12 @@ export default function OficinaView() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-ink-900">{t('oficina.title')}</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-ink-900">{t('oficina.title')}</h1>
+          <p data-testid="oficina-role" className="text-sm text-ink-700">
+            {ot(`role.${surface}`)}
+          </p>
+        </div>
         <div role="group" aria-label={t('oficina.surfaceToggle')} className="flex overflow-hidden rounded-lg border border-ink-300">
           {(['mostrador', 'escritorio'] as const).map((s) => (
             <button

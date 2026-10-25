@@ -1,1 +1,410 @@
-{}
+{
+  "oficina": {
+    "simulado": "simulado",
+    "role": {
+      "mostrador": "Rol: caja · cobra cuotas y ve el total del turno",
+      "escritorio": "Rol: back office · planes, vendedores, pagos y mensajes"
+    },
+    "drawer": { "close": "Cerrar panel" },
+    "mostrador": {
+      "heading": "Mostrador: cobro de cuotas",
+      "side": "Oficina y turno",
+      "search": {
+        "label": "Buscar comprador",
+        "hint": "Escribe el teléfono o el nombre. Con el teléfono completo abrimos la ficha directamente.",
+        "placeholder": "Teléfono o nombre",
+        "clear": "Borrar",
+        "searching": "Buscando…",
+        "idle": "Escribe un teléfono o un nombre para empezar.",
+        "emptyTitle": "No encontramos a nadie con «{query}»",
+        "emptyBody": "Revisa el número con el cliente o busca por su nombre. Si es su primera visita, su asesor puede crear el plan.",
+        "blocked": "Plan en pausa",
+        "dueCount": "{count} por cobrar · {amount}",
+        "nothingDue": "Nada por cobrar hoy"
+      },
+      "card": {
+        "planRef": "Plan {ref}",
+        "back": "Otra búsqueda",
+        "loading": "Cargando el plan…",
+        "blocked": "Este plan está en pausa: hoy no se pueden recibir pagos. Pide al cliente que hable con su asesor.",
+        "wrongOffice": "Este plan es del corredor {corridor} y esta caja es {office}. Cámbiala en el panel de oficina para cobrar.",
+        "pendingRef": "Referencia MoneyGram {ref} pendiente para la cuota {n}",
+        "pendingLong": "Lleva {minutes} min sin confirmarse. Si el cliente ya pagó en efectivo allí, no cobres de nuevo: espera la confirmación.",
+        "pendingShort": "Creada hace {minutes} min.",
+        "gate": {
+          "seller_unverified": "El pago se recibe y queda registrado. La entrega al vendedor espera a que termine su verificación.",
+          "seller_paused": "El pago se recibe y queda registrado. La entrega al vendedor está en pausa mientras se revisa su cuenta.",
+          "seller_rejected": "El pago se recibe y queda registrado. La entrega al vendedor está detenida; el asesor contactará al cliente.",
+          "seller_cooling_off": "El pago se recibe y queda registrado. La entrega al vendedor espera la verificación de su nueva cuenta.",
+          "cnr_alert": "El pago se recibe y queda registrado. La entrega al vendedor espera la revisión de una novedad registral."
+        },
+        "dueTitle": "Cuotas por cobrar",
+        "nothingDueTitle": "No hay cuotas por cobrar hoy",
+        "nextDue": "La cuota {n} de {amount} vence el {date}; se puede pagar desde el {opens}.",
+        "firstPayment": "Todavía no tiene pagos: será su primera cuota.",
+        "installment": "Cuota {n} · vence el {date}",
+        "lateInGrace": "Atrasada, en periodo de gracia",
+        "late": "Atrasada",
+        "charge": "Cobrar {amount}"
+      },
+      "pay": {
+        "title": "Cobrar la cuota {n}",
+        "dueOn": "vence el {date}",
+        "toCharge": "A cobrar",
+        "feeIncluded": "Incluye cargo de {fee}",
+        "tender": "Forma de pago",
+        "tenders": { "cash": "Efectivo", "card": "Tarjeta" },
+        "received": "Monto recibido",
+        "receivedPlaceholder": "0.00",
+        "exact": "Exacto {amount}",
+        "cardHint": "Pasa la tarjeta por la terminal. Se cobra el monto exacto, sin cambio.",
+        "short": "Faltan {missing}",
+        "invalid": "Escribe un monto válido, por ejemplo 800 o 800.50",
+        "change": "Cambio a entregar",
+        "cancel": "Volver",
+        "confirming": "Registrando el pago…",
+        "confirm": "Confirmar cobro {amount}"
+      },
+      "receipt": {
+        "done": "Pago registrado",
+        "doneBody": "Entrega el comprobante a {name}.",
+        "ticketLabel": "Comprobante de 80 mm",
+        "brand": "CHATEAUX",
+        "ticket": "Ticket",
+        "date": "Fecha",
+        "buyer": "Cliente",
+        "plan": "Plan",
+        "unit": "Unidad",
+        "installment": "Cuota",
+        "installmentValue": "{n} · vence {date}",
+        "tender": "Forma de pago",
+        "paid": "Pagado",
+        "fee": "Cargo",
+        "received": "Recibido",
+        "change": "Cambio",
+        "toSeller": "Para el vendedor",
+        "released": "Entregado al vendedor.",
+        "releaseOn": "Se entrega al vendedor el {date}.",
+        "thanks": "Gracias por su pago",
+        "simulatedTicket": "Comprobante de demostración (simulado)",
+        "print": "Imprimir comprobante",
+        "whatsapp": "Enviar por WhatsApp",
+        "whatsappSent": "Enviado por WhatsApp",
+        "whatsappTo": "Enviado a {to}: {template} con el enlace {link}",
+        "next": "Siguiente cliente"
+      },
+      "office": {
+        "title": "Oficina y caja",
+        "label": "Oficina de este turno",
+        "licensed": "Agencia autorizada",
+        "cashier": "Cajero: {id}"
+      },
+      "shift": {
+        "title": "Total del turno",
+        "date": "Hoy, {date}",
+        "byTender": "{tender} · {count} pagos",
+        "total": "Total",
+        "empty": "Aún no hay cobros en este turno."
+      }
+    },
+    "escritorio": {
+      "tabsLabel": "Secciones del escritorio",
+      "tabs": {
+        "planes": "Planes",
+        "vendedores": "Vendedores",
+        "pagos": "Pagos al vendedor",
+        "mensajes": "Mensajes WhatsApp",
+        "constructora": "Constructora / Fiducia",
+        "tesoreria": "Tesorería"
+      },
+      "search": {
+        "label": "Buscar (Ctrl+K)",
+        "placeholder": "Comprador, plan, teléfono o vendedor",
+        "results": "Resultados de la búsqueda",
+        "none": "Sin resultados para «{query}»",
+        "kind": { "plan": "Plan", "seller": "Vendedor" }
+      }
+    },
+    "planStatus": {
+      "activo": "Activo",
+      "atrasado": "Atrasado",
+      "en_mora": "En mora",
+      "en_pausa": "En pausa",
+      "cancelado": "Cancelado",
+      "completado": "Completado"
+    },
+    "sellerStatus": {
+      "pending": "Pendiente",
+      "verified": "Verificado",
+      "paused": "Pausado",
+      "rejected": "Rechazado"
+    },
+    "payoutStatus": {
+      "enviado": "Enviado",
+      "en_transito": "En tránsito",
+      "acreditado": "Acreditado",
+      "error": "Error",
+      "transferido": "Transferido",
+      "retenido": "Retenido"
+    },
+    "gate": {
+      "seller_unverified": { "title": "Verificación pendiente", "body": "No se entrega dinero a este vendedor hasta terminar su verificación (KYB, títulos en el CNR y titular de la cuenta). Verifícalo para liberar las entregas retenidas." },
+      "seller_paused": { "title": "Vendedor en pausa", "body": "Las entregas están detenidas mientras el vendedor está en pausa. Reactívalo cuando termine la revisión." },
+      "seller_rejected": { "title": "Vendedor rechazado", "body": "El rechazo es definitivo: ninguna entrega llegará a este vendedor. Los pagos de los compradores quedan registrados y retenidos." },
+      "seller_cooling_off": { "title": "Cambio de cuenta en espera", "body": "El vendedor pidió cambiar su cuenta de pago. Durante 72 horas no se entrega dinero y la nueva cuenta se vuelve a verificar." },
+      "cnr_alert": { "title": "Alerta registral (CNR)", "body": "Hay un nuevo gravamen inscrito sobre una propiedad del vendedor. Sus planes quedan en pausa y no se entrega dinero hasta resolverlo." }
+    },
+    "planes": {
+      "title": "Planes",
+      "count": "{shown} de {total}",
+      "filters": "Filtros de planes",
+      "filter": {
+        "corridor": "Corredor",
+        "all": "Todos",
+        "seller": "Vendedor",
+        "status": "Estado",
+        "dueBy": "Próxima cuota hasta",
+        "clear": "Quitar filtros"
+      },
+      "empty": "Todavía no hay planes",
+      "emptyBody": "Cuando se cree el primer plan aparecerá aquí.",
+      "emptyFiltered": "Ningún plan coincide con estos filtros",
+      "emptyFilteredBody": "Prueba con otro estado o quita los filtros.",
+      "caption": "Planes de pago",
+      "col": {
+        "buyer": "Comprador",
+        "unit": "Unidad",
+        "corridor": "Corredor",
+        "seller": "Vendedor",
+        "status": "Estado",
+        "paid": "Pagadas",
+        "nextDue": "Próxima cuota",
+        "nextAmount": "Monto"
+      },
+      "lateCount": "{count} cuota(s) atrasada(s)",
+      "drawer": {
+        "loading": "Cargando plan…",
+        "summary": "Resumen",
+        "buyerContact": "Contacto",
+        "paid": "Cuotas pagadas",
+        "paidValue": "{paid} de {total}",
+        "installment": "Cuota",
+        "downPayment": "Cuota inicial total",
+        "governance": "Estado del plan",
+        "openSeller": "Ver vendedor: {name}",
+        "openConstructora": "Abrir Constructora / Fiducia",
+        "openTesoreria": "Abrir Tesorería",
+        "schedule": "Calendario de cuotas",
+        "scheduleTable": "Tabla de cuotas, desplazable",
+        "payments": "Pagos e intentos de pago",
+        "payouts": "Entregas al vendedor",
+        "whatsapp": "Historial de WhatsApp",
+        "lateInGrace": "En gracia",
+        "late": "Atrasada · {days} días hábiles",
+        "col": { "n": "Cuota", "due": "Vence", "amount": "Monto", "state": "Estado" },
+        "noPayments": "Este plan todavía no tiene pagos",
+        "noPaymentsBody": "El primer pago aparecerá aquí en cuanto se registre.",
+        "feeIncl": "incluye cargo {fee}",
+        "ref": "ref. {ref}",
+        "expiredAt": "Venció el {at}",
+        "pendingLong": "Pendiente hace {minutes} min: revisa con la red de efectivo",
+        "pendingShort": "Pendiente hace {minutes} min",
+        "noPayouts": "Todavía no hay entregas al vendedor"
+      }
+    },
+    "governance": {
+      "active": "Activo",
+      "delinquent": "En mora",
+      "defaulted": "Incumplido",
+      "on_hold": "En pausa",
+      "cancelled": "Cancelado",
+      "completed": "Completado"
+    },
+    "cell": {
+      "pagado": "Pagada",
+      "bloqueado": "Tasa asegurada",
+      "ofrecido": "Renovación ofrecida",
+      "abierto": "Abierta",
+      "roto": "Aseguramiento roto",
+      "no_pagado": "No pagada",
+      "condonado": "Condonada",
+      "recibido": "Recibida, se entrega al vencer"
+    },
+    "method": {
+      "moneygram_cash": "Efectivo MoneyGram",
+      "office_counter": "Mostrador",
+      "ach": "Transferencia bancaria (ACH)"
+    },
+    "paymentStatus": {
+      "pending": "Pendiente",
+      "completed": "Completado",
+      "quote_expired": "Referencia vencida",
+      "blocked": "Bloqueado",
+      "error": "Error",
+      "cancelled": "Cancelado"
+    },
+    "blockReason": {
+      "above_limit": "Bloqueado: supera el máximo de {max} por referencia en efectivo",
+      "below_limit": "Bloqueado: por debajo del mínimo de la red de efectivo",
+      "state_excluded": "Bloqueado: la red de efectivo no opera en el estado del comprador",
+      "method_not_offered": "Bloqueado: forma de pago no disponible para este plan",
+      "plan_blocked": "Bloqueado: el plan estaba en pausa"
+    },
+    "recon": {
+      "line": "{paid} pagado − {fee} cargo = {seller} al vendedor",
+      "ok": "Conciliado",
+      "mismatch": "No cuadra"
+    },
+    "outbox": {
+      "title": "Mensajes WhatsApp",
+      "intro": "Todo lo que el sistema enviaría por WhatsApp. El canal es simulado: nada sale de la demo.",
+      "filter": "Plan",
+      "allPlans": "Todos los planes",
+      "empty": "Todavía no hay mensajes",
+      "emptyPlan": "Este plan todavía no tiene mensajes",
+      "emptyBody": "Los recordatorios, referencias y avisos de pago aparecerán aquí.",
+      "template": {
+        "recordatorio": "Recordatorio",
+        "referencia_moneygram": "Referencia MoneyGram",
+        "pago_recibido": "Pago recibido",
+        "pago_entregado": "Pago entregado",
+        "pago_atrasado": "Pago atrasado",
+        "plan_en_pausa": "Plan en pausa",
+        "renovacion_bloqueo": "Renovación de tasa"
+      },
+      "to": "Para {to} · {locale}",
+      "link": "Enlace: {link}"
+    },
+    "actions": {
+      "title": "Acciones sobre el plan",
+      "detail": "Acción del back office",
+      "none": "No hay acciones disponibles en el estado actual.",
+      "holdReason": "Motivo de la pausa",
+      "place_hold": "Poner en pausa",
+      "lift_hold": "Quitar la pausa",
+      "declare_default": "Declarar incumplimiento",
+      "cancel_plan": "Cancelar el plan",
+      "cancelReason": "Motivo de la cancelación",
+      "installment": "Cuota {n} · {state}",
+      "mark_missed": "Marcar no pagada",
+      "cure": "Registrar pago tardío",
+      "waive": "Condonar",
+      "done": {
+        "place_hold": "Plan en pausa. Se avisó al comprador por WhatsApp.",
+        "lift_hold": "Pausa retirada: el plan vuelve a recibir pagos.",
+        "declare_default": "Incumplimiento declarado.",
+        "cancel_plan": "Plan cancelado.",
+        "mark_missed": "Cuota marcada como no pagada.",
+        "cure": "Pago tardío registrado.",
+        "waive": "Cuota condonada."
+      },
+      "confirm": {
+        "declare_default": { "title": "¿Declarar el incumplimiento de {name}?", "body": "Esta acción no se puede deshacer. El plan deja de recibir pagos y pasa al proceso de incumplimiento." },
+        "cancel_plan": { "title": "¿Cancelar el plan de {name}?", "body": "Esta acción no se puede deshacer. El plan se cierra y el saldo retenido queda para devolución al comprador." }
+      }
+    },
+    "vendedores": {
+      "title": "Vendedores",
+      "filter": "Filtrar por estado de verificación",
+      "all": "Todos",
+      "empty": "Ningún vendedor en este estado",
+      "emptyBody": "Elige otro estado para ver más vendedores.",
+      "tier": { "1": "Nivel 1 · confirmados por el banco", "2": "Nivel 2 · independientes, verificación completa" },
+      "col": { "seller": "Vendedor", "status": "Verificación", "releases": "Entregas", "option": "Opción de pago", "plans": "Planes" },
+      "flowing": "Fluyen",
+      "option": { "A": "Opción A · USDC en custodia del proveedor", "B": "Opción B · USD a cuenta bancaria" },
+      "plansValue": "{plans} planes · {releases} entregas",
+      "verifyNote": "Cambio de verificación desde el escritorio",
+      "drawer": {
+        "loading": "Cargando vendedor…",
+        "verification": "Verificación",
+        "flowing": "Las entregas a este vendedor fluyen con normalidad.",
+        "status": "Estado",
+        "verifiedAt": "Verificado el",
+        "kyb": "Expediente KYB",
+        "tierCheck": "Confirmación",
+        "rejectedFinal": "Rechazo definitivo: no admite cambios de estado ni de cuenta.",
+        "company": "Datos de la empresa",
+        "legalName": "Razón social",
+        "tradeName": "Nombre comercial",
+        "taxId": "NIT",
+        "bank": "Banco",
+        "corridor": "Corredor",
+        "legalRep": "Representante legal",
+        "plans": "Planes del vendedor",
+        "noPlans": "Este vendedor todavía no tiene planes",
+        "noPlansBody": "Los planes aparecerán aquí cuando esté verificado y se cree el primero."
+      },
+      "tierCheck": {
+        "1": "Confirmado por {bank} (simulado)",
+        "2": "KYB completo, títulos en el CNR y coincidencia de titular con {bank} (simulado)"
+      },
+      "move": {
+        "verified": "Marcar verificado",
+        "verifiedAgain": "Reactivar",
+        "paused": "Poner en pausa",
+        "rejected": "Rechazar vendedor"
+      },
+      "done": {
+        "verified": "Vendedor verificado. Las entregas retenidas salen en el próximo ciclo.",
+        "paused": "Vendedor en pausa: sus entregas quedan retenidas.",
+        "rejected": "Vendedor rechazado de forma definitiva."
+      },
+      "reject": {
+        "title": "¿Rechazar a {name}?",
+        "body": "El rechazo es definitivo: no se podrá verificar ni cambiar su cuenta, y ninguna entrega le llegará."
+      },
+      "cnr": {
+        "title": "Propiedades y títulos (CNR)",
+        "empty": "Sin propiedades registradas",
+        "emptyBody": "Agrega las unidades del vendedor para revisar sus títulos en el CNR.",
+        "alert": { "none": "Sin alertas", "lien_registered": "Nuevo gravamen inscrito", "cleared": "Alerta resuelta" },
+        "registryNo": "Matrícula CNR",
+        "certDate": "Fecha del certificado",
+        "certHash": "Huella del certificado (SHA-256)",
+        "alertTitle": "Nuevo gravamen inscrito",
+        "alertEffect": "Los planes de este vendedor quedan en pausa hasta resolverlo.",
+        "alertDetail": "Nuevo gravamen inscrito (simulado)",
+        "raise": "Registrar alerta CNR (simulado)",
+        "raised": "Alerta registrada: {count} plan(es) del vendedor quedan en pausa."
+      },
+      "payout": {
+        "title": "Cuenta de pago",
+        "option": "Opción",
+        "account": "Cuenta activa",
+        "noAccount": "Sin cuenta: se activa al verificar al vendedor",
+        "pendingTitle": "Cambio en espera",
+        "waitingVerification": "Cuenta en espera de verificación",
+        "newAccount": "Nueva cuenta",
+        "until": "Se activa el {date} (faltan unas {hours} h) tras volver a verificar.",
+        "change": "Cambiar cuenta de pago",
+        "changeHint": "Por seguridad, la nueva cuenta queda en espera {hours} horas y se vuelve a verificar. Mientras tanto no se entrega dinero a este vendedor.",
+        "field": {
+          "bank": { "institution": "Banco", "holder": "Titular de la cuenta", "ref": "Número de cuenta (enmascarado)" },
+          "provider_address": { "institution": "Proveedor de custodia", "holder": "Titular", "ref": "Referencia en el proveedor" }
+        },
+        "submit": "Solicitar cambio",
+        "cancel": "Cancelar",
+        "changePending": "Cambio en espera hasta el {date}.",
+        "changeSaved": "Cuenta registrada."
+      }
+    },
+    "pagos": {
+      "title": "Pagos al vendedor",
+      "stat": { "total": "Entregas", "inFlight": "En camino", "attention": "Requieren atención", "toSeller": "Acreditado a vendedores" },
+      "filter": { "status": "Estado", "option": "Opción" },
+      "option": { "A": "Opción A · USDC en custodia", "B": "Opción B · USD a cuenta bancaria" },
+      "empty": "Todavía no hay entregas a vendedores",
+      "emptyFiltered": "Ninguna entrega coincide con estos filtros",
+      "emptyBody": "Cada cuota liberada aparece aquí con su conciliación.",
+      "partner": "vía {partner} (simulado)",
+      "ref": "ref. {ref}",
+      "sentAt": "Enviado el {at}",
+      "expected": "acreditación prevista el {date}",
+      "creditedAt": "acreditado el {at}",
+      "errorDetail": "Motivo: {detail}",
+      "retry": "Reintentar entrega",
+      "retried": "Reintento enviado: {status}"
+    }
+  }
+}

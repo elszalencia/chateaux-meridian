@@ -1,1 +1,410 @@
-{}
+{
+  "oficina": {
+    "simulado": "simulated",
+    "role": {
+      "mostrador": "Role: cashier · takes installments and sees the shift total",
+      "escritorio": "Role: back office · plans, sellers, payouts and messages"
+    },
+    "drawer": { "close": "Close panel" },
+    "mostrador": {
+      "heading": "Counter: taking installments",
+      "side": "Office and shift",
+      "search": {
+        "label": "Find buyer",
+        "hint": "Type the phone number or the name. A full phone number opens the buyer card straight away.",
+        "placeholder": "Phone or name",
+        "clear": "Clear",
+        "searching": "Searching…",
+        "idle": "Type a phone number or a name to start.",
+        "emptyTitle": "No one found for “{query}”",
+        "emptyBody": "Check the number with the customer or search by name. If this is their first visit, their advisor can create the plan.",
+        "blocked": "Plan on hold",
+        "dueCount": "{count} to collect · {amount}",
+        "nothingDue": "Nothing to collect today"
+      },
+      "card": {
+        "planRef": "Plan {ref}",
+        "back": "New search",
+        "loading": "Loading the plan…",
+        "blocked": "This plan is on hold: no payments can be taken today. Ask the customer to talk to their advisor.",
+        "wrongOffice": "This plan belongs to the {corridor} corridor and this till is {office}. Switch it in the office panel to collect.",
+        "pendingRef": "MoneyGram reference {ref} pending for installment {n}",
+        "pendingLong": "Unconfirmed for {minutes} min. If the customer already paid cash there, do not charge again: wait for the confirmation.",
+        "pendingShort": "Created {minutes} min ago.",
+        "gate": {
+          "seller_unverified": "The payment is taken and recorded. Delivery to the seller waits until the seller’s verification is done.",
+          "seller_paused": "The payment is taken and recorded. Delivery to the seller is paused while their account is reviewed.",
+          "seller_rejected": "The payment is taken and recorded. Delivery to the seller is stopped; the advisor will contact the customer.",
+          "seller_cooling_off": "The payment is taken and recorded. Delivery to the seller waits for their new account to be verified.",
+          "cnr_alert": "The payment is taken and recorded. Delivery to the seller waits for a land-registry issue to be reviewed."
+        },
+        "dueTitle": "Installments to collect",
+        "nothingDueTitle": "Nothing to collect today",
+        "nextDue": "Installment {n} of {amount} is due {date}; it can be paid from {opens}.",
+        "firstPayment": "No payments yet: this will be their first installment.",
+        "installment": "Installment {n} · due {date}",
+        "lateInGrace": "Late, in grace period",
+        "late": "Late",
+        "charge": "Collect {amount}"
+      },
+      "pay": {
+        "title": "Collect installment {n}",
+        "dueOn": "due {date}",
+        "toCharge": "To collect",
+        "feeIncluded": "Includes a {fee} fee",
+        "tender": "Payment method",
+        "tenders": { "cash": "Cash", "card": "Card" },
+        "received": "Amount received",
+        "receivedPlaceholder": "0.00",
+        "exact": "Exact {amount}",
+        "cardHint": "Run the card on the terminal. The exact amount is charged, no change.",
+        "short": "{missing} short",
+        "invalid": "Type a valid amount, for example 800 or 800.50",
+        "change": "Change to give back",
+        "cancel": "Back",
+        "confirming": "Recording the payment…",
+        "confirm": "Confirm {amount}"
+      },
+      "receipt": {
+        "done": "Payment recorded",
+        "doneBody": "Hand the receipt to {name}.",
+        "ticketLabel": "80 mm receipt",
+        "brand": "CHATEAUX",
+        "ticket": "Ticket",
+        "date": "Date",
+        "buyer": "Customer",
+        "plan": "Plan",
+        "unit": "Unit",
+        "installment": "Installment",
+        "installmentValue": "{n} · due {date}",
+        "tender": "Method",
+        "paid": "Paid",
+        "fee": "Fee",
+        "received": "Received",
+        "change": "Change",
+        "toSeller": "To the seller",
+        "released": "Delivered to the seller.",
+        "releaseOn": "Delivered to the seller on {date}.",
+        "thanks": "Thank you for your payment",
+        "simulatedTicket": "Demo receipt (simulated)",
+        "print": "Print receipt",
+        "whatsapp": "Send by WhatsApp",
+        "whatsappSent": "Sent by WhatsApp",
+        "whatsappTo": "Sent to {to}: {template} with the link {link}",
+        "next": "Next customer"
+      },
+      "office": {
+        "title": "Office and till",
+        "label": "Office for this shift",
+        "licensed": "Licensed agency",
+        "cashier": "Cashier: {id}"
+      },
+      "shift": {
+        "title": "Shift total",
+        "date": "Today, {date}",
+        "byTender": "{tender} · {count} payments",
+        "total": "Total",
+        "empty": "No payments taken this shift yet."
+      }
+    },
+    "escritorio": {
+      "tabsLabel": "Desk sections",
+      "tabs": {
+        "planes": "Plans",
+        "vendedores": "Sellers",
+        "pagos": "Seller payouts",
+        "mensajes": "WhatsApp messages",
+        "constructora": "Builder / Trust",
+        "tesoreria": "Treasury"
+      },
+      "search": {
+        "label": "Search (Ctrl+K)",
+        "placeholder": "Buyer, plan, phone or seller",
+        "results": "Search results",
+        "none": "No results for “{query}”",
+        "kind": { "plan": "Plan", "seller": "Seller" }
+      }
+    },
+    "planStatus": {
+      "activo": "Active",
+      "atrasado": "Late",
+      "en_mora": "In arrears",
+      "en_pausa": "On hold",
+      "cancelado": "Cancelled",
+      "completado": "Completed"
+    },
+    "sellerStatus": {
+      "pending": "Pending",
+      "verified": "Verified",
+      "paused": "Paused",
+      "rejected": "Rejected"
+    },
+    "payoutStatus": {
+      "enviado": "Sent",
+      "en_transito": "In transit",
+      "acreditado": "Credited",
+      "error": "Error",
+      "transferido": "Transferred",
+      "retenido": "Held"
+    },
+    "gate": {
+      "seller_unverified": { "title": "Verification pending", "body": "No money goes to this seller until verification is done (KYB, land-registry titles and account holder). Verify the seller to release the held payouts." },
+      "seller_paused": { "title": "Seller paused", "body": "Payouts are stopped while the seller is paused. Reactivate them once the review is done." },
+      "seller_rejected": { "title": "Seller rejected", "body": "Rejection is final: no payout will reach this seller. Buyer payments stay recorded and held." },
+      "seller_cooling_off": { "title": "Account change on hold", "body": "The seller asked to change their payout account. For 72 hours no money is paid out and the new account is verified again." },
+      "cnr_alert": { "title": "Land-registry alert (CNR)", "body": "A new lien was registered on one of the seller’s properties. Their plans are on hold and no money is paid out until it is resolved." }
+    },
+    "planes": {
+      "title": "Plans",
+      "count": "{shown} of {total}",
+      "filters": "Plan filters",
+      "filter": {
+        "corridor": "Corridor",
+        "all": "All",
+        "seller": "Seller",
+        "status": "Status",
+        "dueBy": "Next due by",
+        "clear": "Clear filters"
+      },
+      "empty": "No plans yet",
+      "emptyBody": "The first plan will show up here once it is created.",
+      "emptyFiltered": "No plan matches these filters",
+      "emptyFilteredBody": "Try another status or clear the filters.",
+      "caption": "Payment plans",
+      "col": {
+        "buyer": "Buyer",
+        "unit": "Unit",
+        "corridor": "Corridor",
+        "seller": "Seller",
+        "status": "Status",
+        "paid": "Paid",
+        "nextDue": "Next due",
+        "nextAmount": "Amount"
+      },
+      "lateCount": "{count} late installment(s)",
+      "drawer": {
+        "loading": "Loading plan…",
+        "summary": "Summary",
+        "buyerContact": "Contact",
+        "paid": "Installments paid",
+        "paidValue": "{paid} of {total}",
+        "installment": "Installment",
+        "downPayment": "Total down payment",
+        "governance": "Plan state",
+        "openSeller": "View seller: {name}",
+        "openConstructora": "Open Builder / Trust",
+        "openTesoreria": "Open Treasury",
+        "schedule": "Installment schedule",
+        "scheduleTable": "Installment table, scrollable",
+        "payments": "Payments and attempts",
+        "payouts": "Payouts to the seller",
+        "whatsapp": "WhatsApp history",
+        "lateInGrace": "In grace",
+        "late": "Late · {days} business days",
+        "col": { "n": "Installment", "due": "Due", "amount": "Amount", "state": "State" },
+        "noPayments": "This plan has no payments yet",
+        "noPaymentsBody": "The first payment will show up here as soon as it is recorded.",
+        "feeIncl": "includes {fee} fee",
+        "ref": "ref. {ref}",
+        "expiredAt": "Expired {at}",
+        "pendingLong": "Pending for {minutes} min: check with the cash network",
+        "pendingShort": "Pending for {minutes} min",
+        "noPayouts": "No payouts to the seller yet"
+      }
+    },
+    "governance": {
+      "active": "Active",
+      "delinquent": "In arrears",
+      "defaulted": "Defaulted",
+      "on_hold": "On hold",
+      "cancelled": "Cancelled",
+      "completed": "Completed"
+    },
+    "cell": {
+      "pagado": "Paid",
+      "bloqueado": "Rate secured",
+      "ofrecido": "Renewal offered",
+      "abierto": "Open",
+      "roto": "Lock broken",
+      "no_pagado": "Missed",
+      "condonado": "Waived",
+      "recibido": "Received, delivered on due date"
+    },
+    "method": {
+      "moneygram_cash": "MoneyGram cash",
+      "office_counter": "Counter",
+      "ach": "Bank transfer (ACH)"
+    },
+    "paymentStatus": {
+      "pending": "Pending",
+      "completed": "Completed",
+      "quote_expired": "Reference expired",
+      "blocked": "Blocked",
+      "error": "Error",
+      "cancelled": "Cancelled"
+    },
+    "blockReason": {
+      "above_limit": "Blocked: above the {max} maximum per cash reference",
+      "below_limit": "Blocked: below the cash network minimum",
+      "state_excluded": "Blocked: the cash network does not operate in the buyer’s state",
+      "method_not_offered": "Blocked: payment method not available for this plan",
+      "plan_blocked": "Blocked: the plan was on hold"
+    },
+    "recon": {
+      "line": "{paid} paid − {fee} fee = {seller} to seller",
+      "ok": "Reconciled",
+      "mismatch": "Does not match"
+    },
+    "outbox": {
+      "title": "WhatsApp messages",
+      "intro": "Everything the system would send on WhatsApp. The channel is simulated: nothing leaves the demo.",
+      "filter": "Plan",
+      "allPlans": "All plans",
+      "empty": "No messages yet",
+      "emptyPlan": "This plan has no messages yet",
+      "emptyBody": "Reminders, references and payment notices will show up here.",
+      "template": {
+        "recordatorio": "Reminder",
+        "referencia_moneygram": "MoneyGram reference",
+        "pago_recibido": "Payment received",
+        "pago_entregado": "Payment delivered",
+        "pago_atrasado": "Late payment",
+        "plan_en_pausa": "Plan on hold",
+        "renovacion_bloqueo": "Rate renewal"
+      },
+      "to": "To {to} · {locale}",
+      "link": "Link: {link}"
+    },
+    "actions": {
+      "title": "Plan actions",
+      "detail": "Back-office action",
+      "none": "No actions available in the current state.",
+      "holdReason": "Hold reason",
+      "place_hold": "Put on hold",
+      "lift_hold": "Lift the hold",
+      "declare_default": "Declare default",
+      "cancel_plan": "Cancel the plan",
+      "cancelReason": "Cancellation reason",
+      "installment": "Installment {n} · {state}",
+      "mark_missed": "Mark as missed",
+      "cure": "Record late payment",
+      "waive": "Waive",
+      "done": {
+        "place_hold": "Plan on hold. The buyer was told on WhatsApp.",
+        "lift_hold": "Hold lifted: the plan takes payments again.",
+        "declare_default": "Default declared.",
+        "cancel_plan": "Plan cancelled.",
+        "mark_missed": "Installment marked as missed.",
+        "cure": "Late payment recorded.",
+        "waive": "Installment waived."
+      },
+      "confirm": {
+        "declare_default": { "title": "Declare default for {name}?", "body": "This cannot be undone. The plan stops taking payments and moves to the default process." },
+        "cancel_plan": { "title": "Cancel {name}’s plan?", "body": "This cannot be undone. The plan closes and the held balance is set aside for a refund to the buyer." }
+      }
+    },
+    "vendedores": {
+      "title": "Sellers",
+      "filter": "Filter by verification status",
+      "all": "All",
+      "empty": "No sellers in this status",
+      "emptyBody": "Pick another status to see more sellers.",
+      "tier": { "1": "Tier 1 · confirmed by the bank", "2": "Tier 2 · independent, full verification" },
+      "col": { "seller": "Seller", "status": "Verification", "releases": "Payouts", "option": "Payout option", "plans": "Plans" },
+      "flowing": "Flowing",
+      "option": { "A": "Option A · USDC held at the provider", "B": "Option B · USD to a bank account" },
+      "plansValue": "{plans} plans · {releases} payouts",
+      "verifyNote": "Verification change from the desk",
+      "drawer": {
+        "loading": "Loading seller…",
+        "verification": "Verification",
+        "flowing": "Payouts to this seller flow normally.",
+        "status": "Status",
+        "verifiedAt": "Verified on",
+        "kyb": "KYB file",
+        "tierCheck": "Confirmation",
+        "rejectedFinal": "Final rejection: no status or account changes allowed.",
+        "company": "Company details",
+        "legalName": "Legal name",
+        "tradeName": "Trade name",
+        "taxId": "Tax ID (NIT)",
+        "bank": "Bank",
+        "corridor": "Corridor",
+        "legalRep": "Legal representative",
+        "plans": "Seller’s plans",
+        "noPlans": "This seller has no plans yet",
+        "noPlansBody": "Plans will show up here once the seller is verified and the first one is created."
+      },
+      "tierCheck": {
+        "1": "Confirmed by {bank} (simulated)",
+        "2": "Full KYB, CNR title check and account-holder match with {bank} (simulated)"
+      },
+      "move": {
+        "verified": "Mark verified",
+        "verifiedAgain": "Reactivate",
+        "paused": "Pause",
+        "rejected": "Reject seller"
+      },
+      "done": {
+        "verified": "Seller verified. Held payouts go out in the next cycle.",
+        "paused": "Seller paused: their payouts are held.",
+        "rejected": "Seller rejected for good."
+      },
+      "reject": {
+        "title": "Reject {name}?",
+        "body": "Rejection is final: the seller cannot be verified or change accounts, and no payout will reach them."
+      },
+      "cnr": {
+        "title": "Properties and titles (CNR)",
+        "empty": "No properties registered",
+        "emptyBody": "Add the seller’s units to check their titles at the CNR.",
+        "alert": { "none": "No alerts", "lien_registered": "New lien registered", "cleared": "Alert cleared" },
+        "registryNo": "CNR registry number",
+        "certDate": "Certificate date",
+        "certHash": "Certificate fingerprint (SHA-256)",
+        "alertTitle": "New lien registered",
+        "alertEffect": "This seller’s plans are on hold until it is resolved.",
+        "alertDetail": "New lien registered (simulated)",
+        "raise": "Record CNR alert (simulated)",
+        "raised": "Alert recorded: {count} of the seller’s plan(s) are on hold."
+      },
+      "payout": {
+        "title": "Payout account",
+        "option": "Option",
+        "account": "Active account",
+        "noAccount": "No account: it activates once the seller is verified",
+        "pendingTitle": "Change on hold",
+        "waitingVerification": "Account waiting for verification",
+        "newAccount": "New account",
+        "until": "Activates {date} (about {hours} h left) after re-verification.",
+        "change": "Change payout account",
+        "changeHint": "For safety, the new account waits {hours} hours and is verified again. No money goes to this seller in the meantime.",
+        "field": {
+          "bank": { "institution": "Bank", "holder": "Account holder", "ref": "Account number (masked)" },
+          "provider_address": { "institution": "Custody provider", "holder": "Holder", "ref": "Provider reference" }
+        },
+        "submit": "Request change",
+        "cancel": "Cancel",
+        "changePending": "Change on hold until {date}.",
+        "changeSaved": "Account recorded."
+      }
+    },
+    "pagos": {
+      "title": "Seller payouts",
+      "stat": { "total": "Payouts", "inFlight": "On the way", "attention": "Need attention", "toSeller": "Credited to sellers" },
+      "filter": { "status": "Status", "option": "Option" },
+      "option": { "A": "Option A · USDC held", "B": "Option B · USD to bank account" },
+      "empty": "No payouts to sellers yet",
+      "emptyFiltered": "No payout matches these filters",
+      "emptyBody": "Every released installment shows up here with its reconciliation.",
+      "partner": "via {partner} (simulated)",
+      "ref": "ref. {ref}",
+      "sentAt": "Sent {at}",
+      "expected": "expected credit {date}",
+      "creditedAt": "credited {at}",
+      "errorDetail": "Reason: {detail}",
+      "retry": "Retry payout",
+      "retried": "Retry sent: {status}"
+    }
+  }
+}
