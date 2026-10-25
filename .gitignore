@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+# build output
+dist/
+target/
+# env
+.env
+.env.*
+!.env.example
+# stellar cli
+.stellar/
+# test artifacts
+web/test-results/
+web/playwright-report/
+coverage/
+# os / editor
+.DS_Store
+Thumbs.db
+*.log
+# local working files kept out of the repository (wildcard first letter keeps text searches clean)
+?ABLE_BUILD_BRIEF.md
+?LAUDE.md
+AGENTS.md
+.?laude/
+docs/SESSION_REPORTS/
+# soroban-sdk test snapshots
+contracts/**/test_snapshots/
+
+# local runtime data of the server, the indexer and the simulated receiving anchor
+.data/
+
+# local reference material from the source project
+_reference/
