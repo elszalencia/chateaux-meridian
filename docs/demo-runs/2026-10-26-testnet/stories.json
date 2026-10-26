@@ -96,6 +96,82 @@
       "returnValue": "11883326312",
       "corridor": "colombia",
       "contract": "CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV"
+    },
+    {
+      "step": "trustline_buyer_SV_1",
+      "source": "GDS2P4N7MZ5BCUMC3FZK4GJCVQD2EXPRZYWA4EGIQYUC7BANTW65XTOE",
+      "hash": "2c8b6463e03ba1f950bad7fa78b1867af2a54775d628492eb70294ccc25a5fbe",
+      "status": "SUCCESS",
+      "ledger": 5397033,
+      "timestamp": "2026-10-26T09:59:12.000Z",
+      "explorer": "https://stellar.expert/explorer/testnet/tx/2c8b6463e03ba1f950bad7fa78b1867af2a54775d628492eb70294ccc25a5fbe",
+      "feeChargedStroops": "100",
+      "feeChargedXlm": "0.0000100",
+      "corridor": "el_salvador",
+      "contract": null
+    },
+    {
+      "step": "mint_usdc_SV_1",
+      "source": "GDOLIJWXKOPUQFUWHJYXWEQS35JNC34WK7BW5BVARABWW6C2VGZOMXHE",
+      "hash": "3d0c2fc5a69ccee9eb9a31f14a35c067b7df3930ad6b00200d65f5fee82493fb",
+      "status": "SUCCESS",
+      "ledger": 5397034,
+      "timestamp": "2026-10-26T09:59:17.000Z",
+      "explorer": "https://stellar.expert/explorer/testnet/tx/3d0c2fc5a69ccee9eb9a31f14a35c067b7df3930ad6b00200d65f5fee82493fb",
+      "feeChargedStroops": "100",
+      "feeChargedXlm": "0.0000100",
+      "corridor": "el_salvador",
+      "contract": null
+    },
+    {
+      "step": "create_plan_sv_2001",
+      "source": "GA6PFKPKUEXQJJVB4I3BZJD2SJMLVBIWUSZCJF4XEG2OQPWMVWNOSLW6",
+      "feeBumpBy": "GBKHHNBMQIAY5DTNFABYUIMUU6CCG4IA6XPQTA7NHLDOQDKVU3WTRBCJ",
+      "resourceFeeStroops": "3213512",
+      "simulatedTotalXlm": "0.3213612",
+      "hash": "3f5d8832a4fbbf4a0dbb374c87b4fe1db636eaa84e090344eee0eddc5dabd1f2",
+      "status": "SUCCESS",
+      "ledger": 5397035,
+      "timestamp": "2026-10-26T09:59:22.000Z",
+      "explorer": "https://stellar.expert/explorer/testnet/tx/3f5d8832a4fbbf4a0dbb374c87b4fe1db636eaa84e090344eee0eddc5dabd1f2",
+      "feeChargedStroops": "2791889",
+      "feeChargedXlm": "0.2791889",
+      "returnValue": null,
+      "corridor": "el_salvador",
+      "contract": "CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF"
+    },
+    {
+      "step": "deposit_sv_2001",
+      "source": "GDS2P4N7MZ5BCUMC3FZK4GJCVQD2EXPRZYWA4EGIQYUC7BANTW65XTOE",
+      "feeBumpBy": "GD2DR6MYUWTWB57YXKNY6VK43VOLHPXUBUEKT7MZ5AP5JC3VOOVAHEKH",
+      "resourceFeeStroops": "125324",
+      "simulatedTotalXlm": "0.0125424",
+      "hash": "8520af675abc968d5b7c404d9d38a3c516e9ea3c4a837bef0e4415de6c972b61",
+      "status": "SUCCESS",
+      "ledger": 5397036,
+      "timestamp": "2026-10-26T09:59:27.000Z",
+      "explorer": "https://stellar.expert/explorer/testnet/tx/8520af675abc968d5b7c404d9d38a3c516e9ea3c4a837bef0e4415de6c972b61",
+      "feeChargedStroops": "106351",
+      "feeChargedXlm": "0.0106351",
+      "returnValue": "7500000000",
+      "corridor": "el_salvador",
+      "contract": "CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF"
+    },
+    {
+      "step": "release_spot_sv_2001_M1",
+      "source": "GA6PFKPKUEXQJJVB4I3BZJD2SJMLVBIWUSZCJF4XEG2OQPWMVWNOSLW6",
+      "resourceFeeStroops": "16903",
+      "simulatedTotalXlm": "0.0017003",
+      "hash": "96ca43992139cca799e827d58e99cd7b1e2e2aae8d8ec93d99665ab84bb59d43",
+      "status": "SUCCESS",
+      "ledger": 5397037,
+      "timestamp": "2026-10-26T09:59:32.000Z",
+      "explorer": "https://stellar.expert/explorer/testnet/tx/96ca43992139cca799e827d58e99cd7b1e2e2aae8d8ec93d99665ab84bb59d43",
+      "feeChargedStroops": "12025",
+      "feeChargedXlm": "0.0012025",
+      "returnValue": "7500000000",
+      "corridor": "el_salvador",
+      "contract": "CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF"
     }
   ],
   "plans": {
@@ -110,6 +186,18 @@
       ],
       "installmentAmount": "4093125",
       "createTx": "fdb7d7b97e08b21d3bb1039020a4767ae979e892e68f4aa95966345c516ba98a"
+    },
+    "2001": {
+      "corridor": "sv",
+      "contract": "CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF",
+      "buyer": "GDS2P4N7MZ5BCUMC3FZK4GJCVQD2EXPRZYWA4EGIQYUC7BANTW65XTOE",
+      "dueTs": [
+        1792922358,
+        1795600758,
+        1798192758
+      ],
+      "installmentAmount": "75000",
+      "createTx": "3f5d8832a4fbbf4a0dbb374c87b4fe1db636eaa84e090344eee0eddc5dabd1f2"
     }
   },
   "g2": {
@@ -127,5 +215,17 @@
     "released": "11883326312",
     "expected": "11883326312",
     "ok": true
+  },
+  "g4": {
+    "released": "7500000000",
+    "expected": "7500000000",
+    "ok": true,
+    "applyLockRefusal": {
+      "name": "LocksDisabledError",
+      "code": "LOCKS_DISABLED",
+      "corridor": "sv",
+      "message": "rate locks are not offered in corridor sv"
+    },
+    "transactionsBuiltForLock": 0
   }
 }
