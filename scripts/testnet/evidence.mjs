@@ -23,7 +23,8 @@ const rows = [
   ...deploy.txs.map((t) => ({ ...t, phase: 'setup' })),
   ...stories.steps.filter((t) => !t.failed).map((t) => ({
     ...t,
-    phase: /_P\d$/.test(t.step) || (t.step.startsWith('create_plan_') && Number(t.step.split('_').pop()) % 1000 > 100) ? 'pool' : 'story',
+    // Pool: steps for demo buyers *_P<n> and for plans 1101-1103 / 2101-2103.
+    phase: /_P\d$/.test(t.step) || Number(/_(\d{4})(?:_|$)/.exec(t.step)?.[1] ?? 0) % 1000 > 100 ? 'pool' : 'story',
   })),
 ];
 
