@@ -1,13 +1,15 @@
 // Prints a plan's on-chain state as a Markdown table (read-only get_status by simulation).
-// Usage: node scripts/testnet/show-plan.mjs <co|sv> <planId>
+// Usage: node scripts/testnet/show-plan.mjs <co|sv> <planId> [--set 8d2a|a28d]  (default: 8d2a, the headline pair)
 // On the El Salvador instance the `cop_due` field holds USD cents.
 import { nativeToScVal } from '@stellar/stellar-sdk';
 import { read } from './lib.mjs';
 
-const CONTRACTS = {
-  co: 'CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV',
-  sv: 'CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF',
+const SETS = {
+  '8d2a': { co: 'CA3NE2EXQLDDDXUZCAEWX2UFUMCWI4CYS32YGXQHLTJE7KTRW35D6WD2', sv: 'CACDLCHAKPJDVYRKJKK3KKMEBLBKLTYISYX6EQO54VQIZJX3CTUTVQGA' },
+  a28d: { co: 'CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV', sv: 'CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF' },
 };
+const setArg = process.argv.indexOf('--set');
+const CONTRACTS = SETS[setArg > 0 ? process.argv[setArg + 1] : '8d2a'];
 const STATUS = ['Open', 'Locked', 'Released', 'Broken', 'Missed', 'Waived'];
 const STATE = ['Active', 'Delinquent', 'Defaulted', 'OnHold', 'Cancelled', 'Completed'];
 const READER = 'GD2DR6MYUWTWB57YXKNY6VK43VOLHPXUBUEKT7MZ5AP5JC3VOOVAHEKH'; // any funded account; simulation only
