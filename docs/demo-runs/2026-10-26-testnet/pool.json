@@ -1,6 +1,6 @@
 {
   "date": "2026-10-26",
-  "note": "Live-demo plan pool. Each buyer is a testnet-only demo account (Modo demo: the platform acts for the buyer) holding the test USDC for M1; M1 is already due. Deposit, lock (Colombia) and release run live in the tour.",
+  "note": "Live-demo plan pool. Each buyer is a testnet-only demo account (Modo demo: the platform acts for the buyer). M1 is already due and deposited; Colombia plans are locked at 3444.427 with expiry = last locked due + 7 days. The live step is one release per plan.",
   "plans": [
     {
       "planId": 1101,
@@ -14,7 +14,12 @@
       "m1Due": true,
       "createTx": "93c2daa6a23ac31f2010b656a995ee37b4bfc2901095fe156dc9e865f3ee5b83",
       "createLedger": 5397044,
-      "createFeeXlm": "0.2791889"
+      "createFeeXlm": "0.2791889",
+      "depositTx": "8a325d5eb62503f309c2dac8e64851340676b67a632d406dc1a9a663cbc08656",
+      "lockTx": "226277f81726037640597b719b50fb6f28dc89ba3d9ae8d823318b28c0f53d74",
+      "lockExpiryTs": 1798797602,
+      "lockedUsdM1Stroops": "11883326312",
+      "liveStep": "release_due(idx 0)"
     },
     {
       "planId": 1102,
@@ -28,7 +33,12 @@
       "m1Due": true,
       "createTx": "9627a2c3ef16bc39964b4efa7c39768b21c3d8c2ab74ace5039031f7ac6631c6",
       "createLedger": 5397048,
-      "createFeeXlm": "0.2791889"
+      "createFeeXlm": "0.2791889",
+      "depositTx": "41a75d0b6b3166c8a2f2b914397d8534dbdee533a0e0748128306e4f65e5993c",
+      "lockTx": "87562c41287a47a3aa6645582ad9e05e724777cdd93b19d534fa484608e12eed",
+      "lockExpiryTs": 1798797623,
+      "lockedUsdM1Stroops": "11883326312",
+      "liveStep": "release_due(idx 0)"
     },
     {
       "planId": 1103,
@@ -42,7 +52,12 @@
       "m1Due": true,
       "createTx": "485bb1c8130c72f937048af319279894b4105cc9168a76c1343090c00e3a7ef1",
       "createLedger": 5397052,
-      "createFeeXlm": "0.2791889"
+      "createFeeXlm": "0.2791889",
+      "depositTx": "0230692f414f30460d703fc16a29a23a17efc3332efd42ae0de957a644e84277",
+      "lockTx": "4331366ee42d9e62e947f7c21ac56a71fda92a500c8a3bb896d9a38ab0c23261",
+      "lockExpiryTs": 1798797642,
+      "lockedUsdM1Stroops": "11883326312",
+      "liveStep": "release_due(idx 0)"
     },
     {
       "planId": 2101,
@@ -56,7 +71,9 @@
       "m1Due": true,
       "createTx": "7d9f586b1c7f85f628a7c7b0608ffbb76309a35d5ee15d22c466c1a76aeb45c6",
       "createLedger": 5397056,
-      "createFeeXlm": "0.2791889"
+      "createFeeXlm": "0.2791889",
+      "depositTx": "137f70541c9048c1176b3d772d0d28d7c0da54338d2eadae176a2b3d39d2023d",
+      "liveStep": "release_spot(idx 0, 7500000000)"
     },
     {
       "planId": 2102,
@@ -70,7 +87,9 @@
       "m1Due": true,
       "createTx": "900f6122d9c5f2b4b4d80fcf7086e872d65aa8c22a9f43f741d4bbea6e3deb39",
       "createLedger": 5397060,
-      "createFeeXlm": "0.2791889"
+      "createFeeXlm": "0.2791889",
+      "depositTx": "73b1486cee1972e6f2a8611d7099c7ece7e2570aa2d8799fc64a0e267028890d",
+      "liveStep": "release_spot(idx 0, 7500000000)"
     },
     {
       "planId": 2103,
@@ -84,7 +103,9 @@
       "m1Due": true,
       "createTx": "75980ec3e728facd3160aac109f8539e4fa64d2184a6373632f952898a4bc28c",
       "createLedger": 5397064,
-      "createFeeXlm": "0.2791889"
+      "createFeeXlm": "0.2791889",
+      "depositTx": "9eb3c04f4df2579c87f8af333744238f1282506f63d0c3c1f1dcd60259e9bbab",
+      "liveStep": "release_spot(idx 0, 7500000000)"
     }
   ]
 }
