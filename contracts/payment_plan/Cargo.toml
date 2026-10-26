@@ -3,7 +3,7 @@ name = "payment_plan"
 version = "0.1.0"
 edition = "2021"
 publish = false
-description = "Casa Puente payment plan: down-payment installments with rate locks, settled in test USDC"
+description = "Chateaux payment plan: down-payment installments with rate locks, settled in test USDC"
 license = "UNLICENSED"
 
 [lib]
