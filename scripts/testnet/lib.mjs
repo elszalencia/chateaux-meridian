@@ -2,7 +2,7 @@
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-  Account, Horizon, Keypair, Networks, Operation, TransactionBuilder, rpc, scValToNative,
+  Account, Horizon, Keypair, Networks, Operation, TransactionBuilder, authorizeEntry, rpc, scValToNative,
 } from '@stellar/stellar-sdk';
 
 export const RPC_URL = 'https://soroban-testnet.stellar.org';
@@ -59,17 +59,40 @@ export async function read(contract, fn, args = [], source) {
 /**
  * Builds, simulates (Soroban ops), signs and submits one operation from `source`.
  * When `feeBumpBy` is given, the inner tx carries a minimal fee and the fee-bump
- * (int64 outer fee) pays resource fee + inclusion. `signers` sign the inner tx.
+ * (int64 outer fee) pays resource fee + inclusion. `signers` sign the inner tx; `authSigners`
+ * sign Soroban auth entries for addresses other than the source (then the tx is re-simulated).
  * Returns a record with hash, ledger, timestamp and fees, or throws with the record attached.
  */
-export async function submit({ step, source, signers, op, soroban = true, feeBumpBy, maxFeeStroops }) {
+export async function submit({ step, source, signers, op, invoke, soroban = true, feeBumpBy, authSigners = [], maxFeeStroops }) {
+  op ??= Operation.invokeContractFunction(invoke);
   const rec = { step, source: source.publicKey(), feeBumpBy: feeBumpBy?.publicKey() };
   const acct = await server.getAccount(source.publicKey());
   let tx = new TransactionBuilder(acct, { fee: INCLUSION.toString(), networkPassphrase: PASSPHRASE })
     .addOperation(op).setTimeout(300).build();
   if (soroban) {
-    const sim = await server.simulateTransaction(tx);
+    let sim = await server.simulateTransaction(tx);
     if (rpc.Api.isSimulationError(sim)) { rec.error = `simulation: ${sim.error}`; throw Object.assign(new Error(rec.error), { rec }); }
+    if (authSigners.length) {
+      // Sign each address-credential entry with the matching signer, then rebuild and re-simulate.
+      if (!invoke) throw new Error('authSigners needs `invoke` ({ contract, function, args }) to rebuild the op');
+      const until = sim.latestLedger + 100;
+      const auth = [];
+      for (const entry of sim.result.auth) {
+        let signed = entry;
+        if (entry.credentials.type !== 'sorobanCredentialsSourceAccount') {
+          for (const k of authSigners) {
+            try { signed = await authorizeEntry(entry, k, until, PASSPHRASE, k.publicKey()); break; } catch { /* not this signer */ }
+          }
+          if (signed === entry) throw new Error('no authSigner matches an auth entry');
+        }
+        auth.push(signed);
+      }
+      const acct2 = await server.getAccount(source.publicKey());
+      tx = new TransactionBuilder(acct2, { fee: INCLUSION.toString(), networkPassphrase: PASSPHRASE })
+        .addOperation(Operation.invokeContractFunction({ ...invoke, auth })).setTimeout(300).build();
+      sim = await server.simulateTransaction(tx);
+      if (rpc.Api.isSimulationError(sim)) { rec.error = `simulation (signed auth): ${sim.error}`; throw Object.assign(new Error(rec.error), { rec }); }
+    }
     rec.resourceFeeStroops = sim.minResourceFee;
     rec.simulatedTotalXlm = xlm(BigInt(sim.minResourceFee) + INCLUSION);
     if (maxFeeStroops && BigInt(sim.minResourceFee) > maxFeeStroops) {

@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-26",
+  "contracts": {
+    "co": "CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV",
+    "sv": "CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF"
+  },
+  "steps": [
+    {
+      "step": "create_plan_co_1001",
+      "source": "GA6PFKPKUEXQJJVB4I3BZJD2SJMLVBIWUSZCJF4XEG2OQPWMVWNOSLW6",
+      "feeBumpBy": "GBKHHNBMQIAY5DTNFABYUIMUU6CCG4IA6XPQTA7NHLDOQDKVU3WTRBCJ",
+      "resourceFeeStroops": "3213512",
+      "simulatedTotalXlm": "0.3213612",
+      "hash": "fdb7d7b97e08b21d3bb1039020a4767ae979e892e68f4aa95966345c516ba98a",
+      "status": "SUCCESS",
+      "ledger": 5396993,
+      "timestamp": "2026-10-26T09:55:52.000Z",
+      "explorer": "https://stellar.expert/explorer/testnet/tx/fdb7d7b97e08b21d3bb1039020a4767ae979e892e68f4aa95966345c516ba98a",
+      "feeChargedStroops": "2791889",
+      "feeChargedXlm": "0.2791889",
+      "returnValue": null,
+      "corridor": "colombia",
+      "contract": "CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV"
+    }
+  ],
+  "plans": {
+    "1001": {
+      "corridor": "co",
+      "contract": "CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV",
+      "buyer": "GDERAPP5CATHWZ4FDGFGAQNFRGS45VVGGEY5IEXKVGGD4MHCWROHB3DW",
+      "dueTs": [
+        1792922149,
+        1795600549,
+        1798192549
+      ],
+      "installmentAmount": "4093125",
+      "createTx": "fdb7d7b97e08b21d3bb1039020a4767ae979e892e68f4aa95966345c516ba98a"
+    }
+  },
+  "g2": {
+    "hash": "fdb7d7b97e08b21d3bb1039020a4767ae979e892e68f4aa95966345c516ba98a",
+    "getTransaction": {
+      "status": "SUCCESS",
+      "ledger": 5396993,
+      "createdAt": "1793008552",
+      "feeBump": true
+    },
+    "feeChargedXlm": "0.2791889",
+    "installmentsOnChain": 3
+  }
+}
