@@ -1,0 +1,45 @@
+{
+  "takenAt": "2026-10-26T10:06:17.492Z",
+  "shots": [
+    {
+      "file": "contract_colombia.png",
+      "url": "https://stellar.expert/explorer/testnet/contract/CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV",
+      "idShownOnPage": true
+    },
+    {
+      "file": "contract_el_salvador.png",
+      "url": "https://stellar.expert/explorer/testnet/contract/CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF",
+      "idShownOnPage": true
+    },
+    {
+      "file": "create_plan_co_1001.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/fdb7d7b97e08b21d3bb1039020a4767ae979e892e68f4aa95966345c516ba98a",
+      "idShownOnPage": true
+    },
+    {
+      "file": "deposit_co_1001.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/9da3c22c528e9081a9bd5f8dd0c6f4b194e35a6c63a57a58d6e7ad3fa83166b6",
+      "idShownOnPage": true
+    },
+    {
+      "file": "apply_lock_co_1001_quarterly.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/d67e446143f219227162f646c79b65d428206c0e6b5783dc4b7b6c67691492e4",
+      "idShownOnPage": true
+    },
+    {
+      "file": "release_due_co_1001_M1.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/6f5726af8d87c4c0f2343b9b0d85e1d6a065143818b243296f56bff2cad1ca49",
+      "idShownOnPage": true
+    },
+    {
+      "file": "deposit_sv_2001.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/8520af675abc968d5b7c404d9d38a3c516e9ea3c4a837bef0e4415de6c972b61",
+      "idShownOnPage": true
+    },
+    {
+      "file": "release_spot_sv_2001_M1.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/96ca43992139cca799e827d58e99cd7b1e2e2aae8d8ec93d99665ab84bb59d43",
+      "idShownOnPage": true
+    }
+  ]
+}
