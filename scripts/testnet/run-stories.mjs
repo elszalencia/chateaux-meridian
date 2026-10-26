@@ -1,7 +1,8 @@
 // Gates G2-G4 and the live-demo plan pool on the 2026-10-26 testnet instances.
 // Usage (tsx, so the services' corridor guard can be imported):
-//   node node_modules/tsx/dist/cli.mjs scripts/testnet/run-stories.mjs <g2|g3|g4|pool>
-// Every transaction is appended to docs/demo-runs/2026-10-26-testnet/stories.json.
+//   node node_modules/tsx/dist/cli.mjs scripts/testnet/run-stories.mjs <g2|g3|g4|headline|pool|pool-prep> [--set a28d|8d2a]
+// `--set` picks the instance pair (default a28d, the first run; 8d2a is the headline pair).
+// Every transaction is appended to the set's state file in docs/demo-runs/2026-10-26-testnet/.
 // Plans are created by the operator (inner tx) in fee-bumps paid by the pool account; buyer
 // deposits are fee-bumped by the fee payer. Demo buyer keys are testnet-only (.env.testnet-generated).
 import { createHash } from 'node:crypto';
@@ -11,10 +12,21 @@ import { Address, Asset, Operation, nativeToScVal, xdr } from '@stellar/stellar-
 import { loadTestnetEnv } from './preflight.mjs';
 import { RUN_DIR, ensureFunded, generatedKey, horizon, json, read, server, submit } from './lib.mjs';
 
-export const CONTRACTS = {
-  co: 'CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV',
-  sv: 'CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF',
+const SETS = {
+  a28d: {
+    contracts: { co: 'CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV', sv: 'CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF' },
+    stateFile: 'stories.json', poolFile: 'pool.json', poolBase: { co: 1100, sv: 2100 }, poolBuyer: 'P', headline: { co: 1001, sv: 2001 },
+  },
+  '8d2a': {
+    contracts: { co: 'CA3NE2EXQLDDDXUZCAEWX2UFUMCWI4CYS32YGXQHLTJE7KTRW35D6WD2', sv: 'CACDLCHAKPJDVYRKJKK3KKMEBLBKLTYISYX6EQO54VQIZJX3CTUTVQGA' },
+    stateFile: 'stories-8d2a.json', poolFile: 'pool-8d2a.json', poolBase: { co: 1200, sv: 2200 }, poolBuyer: 'Q', headline: { co: 1004, sv: 2004 },
+  },
 };
+const setArg = process.argv.indexOf('--set');
+const SET_NAME = setArg > 0 ? process.argv[setArg + 1] : 'a28d';
+const SET = SETS[SET_NAME];
+if (!SET) { console.error(`unknown --set ${SET_NAME}`); process.exit(2); }
+export const CONTRACTS = SET.contracts;
 const CO_DUE = 4_093_125n; // pesos per installment
 const CO_RATE = 34_444_270_000n; // 3444.427 COP/USD x 1e7
 const CO_M1_STROOPS = 11_883_326_312n; // floor(4,093,125 x 1e14 / rate) = USD 1,188.33
@@ -22,8 +34,8 @@ const SV_DUE_CENTS = 75_000n; // USD 750.00 per installment
 const SV_M1_STROOPS = SV_DUE_CENTS * 100_000n;
 const MAX_FEE = 1_000_000_000n; // 100 XLM per tx: far above the measured fees, far below 60% of any account
 
-const OUT = resolve(RUN_DIR, 'stories.json');
-const state = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : { date: '2026-10-26', contracts: CONTRACTS, steps: [], plans: {} };
+const OUT = resolve(RUN_DIR, SET.stateFile);
+const state = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : { date: '2026-10-26', set: SET_NAME, contracts: CONTRACTS, steps: [], plans: {} };
 const save = () => writeFileSync(OUT, json(state) + '\n');
 const keys = loadTestnetEnv();
 const usdc = new Asset('USDC', keys.usdIssuer.publicKey());
@@ -162,11 +174,11 @@ async function g4() {
 
 async function pool() {
   state.pool ??= [];
-  for (const [corridor, base, amount, mint] of [['co', 1100, CO_DUE, 12_500_000_000n], ['sv', 2100, SV_DUE_CENTS, SV_M1_STROOPS]]) {
+  for (const [corridor, base, amount, mint] of [['co', SET.poolBase.co, CO_DUE, 12_500_000_000n], ['sv', SET.poolBase.sv, SV_DUE_CENTS, SV_M1_STROOPS]]) {
     for (let i = 1; i <= 3; i++) {
       const planId = base + i;
       if (state.pool.some((p) => p.planId === planId)) continue;
-      const buyer = await demoBuyer(`${corridor.toUpperCase()}_P${i}`, mint);
+      const buyer = await demoBuyer(`${corridor.toUpperCase()}_${SET.poolBuyer}${i}`, mint);
       const r = await createPlan(corridor, planId, buyer, amount);
       const st = await read(CONTRACTS[corridor], 'get_status', [u32(planId)], keys.feePayer.publicKey());
       const due0 = Number(st.value.installments[0].due_ts);
@@ -178,7 +190,7 @@ async function pool() {
       save();
     }
   }
-  writeFileSync(resolve(RUN_DIR, 'pool.json'), json({
+  writeFileSync(resolve(RUN_DIR, SET.poolFile), json({
     date: '2026-10-26',
     note: 'Live-demo plan pool. Each buyer is a testnet-only demo account (Modo demo: the platform acts for the buyer) holding the test USDC for M1; M1 is already due. Deposit, lock (Colombia) and release run live in the tour.',
     plans: state.pool,
@@ -191,7 +203,7 @@ async function pool() {
 async function poolPrep() {
   for (const p of state.pool) {
     const co = p.corridor === 'colombia';
-    const name = `${co ? 'CO' : 'SV'}_P${p.planId % 10}`;
+    const name = `${co ? 'CO' : 'SV'}_${SET.poolBuyer}${p.planId % 10}`;
     const buyer = generatedKey(`DEMO_BUYER_${name}_SECRET`, `demo buyer ${name}`);
     if (buyer.publicKey() !== p.buyer) throw new Error(`buyer key mismatch for plan ${p.planId}`);
     const st = await read(p.contract, 'get_status', [u32(p.planId)], keys.feePayer.publicKey());
@@ -207,7 +219,7 @@ async function poolPrep() {
     p.liveStep = co ? 'release_due(idx 0)' : `release_spot(idx 0, ${SV_M1_STROOPS})`;
     save();
   }
-  writeFileSync(resolve(RUN_DIR, 'pool.json'), json({
+  writeFileSync(resolve(RUN_DIR, SET.poolFile), json({
     date: '2026-10-26',
     note: 'Live-demo plan pool. Each buyer is a testnet-only demo account (Modo demo: the platform acts for the buyer). M1 is already due and deposited; Colombia plans are locked at 3444.427 with expiry = last locked due + 7 days. The live step is one release per plan.',
     plans: state.pool,
@@ -215,7 +227,50 @@ async function poolPrep() {
   console.log(json(state.pool.map((p) => [p.planId, p.depositTx, p.lockTx ?? '-', p.liveStep])));
 }
 
+/** Headline stories on the set's pair: Colombia (create, deposit, lock with the fixed expiry,
+ *  release_due M1) and El Salvador (create, deposit, release_spot M1, service lock refusal). */
+async function headline() {
+  const { co: coId, sv: svId } = SET.headline;
+  state.headline ??= {};
+  const coBuyer = await demoBuyer(`CO_${coId % 1000}`, CO_M1_STROOPS);
+  if (!state.plans[coId]) await createPlan('co', coId, coBuyer, CO_DUE);
+  const created = await server.getTransaction(state.plans[coId].createTx);
+  if (created.status !== 'SUCCESS') throw new Error(`create_plan ${coId} not SUCCESS`);
+  await deposit('co', coId, coBuyer, CO_M1_STROOPS);
+  const lock = await applyQuarterlyLock(coId, coBuyer);
+  const rel = await step('colombia', {
+    step: `release_due_co_${coId}_M1`, source: keys.operator, signers: [keys.operator],
+    invoke: { contract: CONTRACTS.co, function: 'release_due', args: [u32(coId), u32(0)] },
+  });
+  state.headline.colombia = {
+    planId: coId, contract: CONTRACTS.co, createTx: state.plans[coId].createTx, createGetTransaction: created.status, feeBump: created.feeBump,
+    lockExpiryTs: lock.lockExpiryTs, lockExpiryRule: 'M3 due + 7 days', released: String(rel.returnValue), expected: CO_M1_STROOPS.toString(),
+    ok: BigInt(rel.returnValue) === CO_M1_STROOPS,
+  };
+  save();
+  console.log('headline colombia', json(state.headline.colombia));
+  if (!state.headline.colombia.ok) throw new Error('Colombia release mismatch');
+
+  const svBuyer = await demoBuyer(`SV_${svId % 1000}`, SV_M1_STROOPS);
+  if (!state.plans[svId]) await createPlan('sv', svId, svBuyer, SV_DUE_CENTS);
+  await deposit('sv', svId, svBuyer, SV_M1_STROOPS);
+  const spot = await step('el_salvador', {
+    step: `release_spot_sv_${svId}_M1`, source: keys.operator, signers: [keys.operator],
+    invoke: { contract: CONTRACTS.sv, function: 'release_spot', args: [u32(svId), u32(0), nativeToScVal(SV_M1_STROOPS, { type: 'i128' })] },
+  });
+  const { assertLocksEnabled } = await import('../../services/src/corridors/index.ts');
+  let refusal = null;
+  try { assertLocksEnabled({ corridor: 'sv' }); } catch (e) { refusal = { name: e.name, code: e.code, corridor: e.corridor, message: e.message }; }
+  state.headline.el_salvador = {
+    planId: svId, contract: CONTRACTS.sv, released: String(spot.returnValue), expected: SV_M1_STROOPS.toString(),
+    ok: BigInt(spot.returnValue) === SV_M1_STROOPS, applyLockRefusal: refusal, transactionsBuiltForLock: 0,
+  };
+  save();
+  console.log('headline el_salvador', json(state.headline.el_salvador));
+  if (!state.headline.el_salvador.ok || refusal?.code !== 'LOCKS_DISABLED') throw new Error('El Salvador headline failed');
+}
+
 const cmd = process.argv[2];
-const run = { g2, g3, g4, pool, 'pool-prep': poolPrep }[cmd];
-if (!run) { console.error('usage: run-stories.mjs <g2|g3|g4|pool|pool-prep>'); process.exit(2); }
+const run = { g2, g3, g4, headline, pool, 'pool-prep': poolPrep }[cmd];
+if (!run) { console.error('usage: run-stories.mjs <g2|g3|g4|headline|pool|pool-prep> [--set a28d|8d2a]'); process.exit(2); }
 run().catch((e) => { console.error('FAILED', e.message); process.exit(1); });
