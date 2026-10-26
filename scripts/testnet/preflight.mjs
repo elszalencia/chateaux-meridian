@@ -23,6 +23,7 @@ export function loadTestnetEnv(path = process.env.ENV_FILE ?? resolve(import.met
     feePayer: Keypair.fromSecret(env.TESTNET_FEE_PAYER_SECRET),
     operator: Keypair.fromSecret(env.TESTNET_OPERATOR_SECRET),
     pool: env.TESTNET_POOL_SECRETS.split(',').map((s) => Keypair.fromSecret(s.trim())),
+    usdIssuer: env.TESTNET_USD_ISSUER_SECRET ? Keypair.fromSecret(env.TESTNET_USD_ISSUER_SECRET) : undefined,
   };
 }
 
