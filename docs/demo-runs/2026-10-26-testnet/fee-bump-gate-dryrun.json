@@ -1,0 +1,149 @@
+{
+  "phase": "fee-bump-gate",
+  "date": "2026-10-26",
+  "contract": "CAVPFFH4WFPHI3525RFM7AOGUXOP3USLCN6IPOF7AK5PMNAGQAJCCTXP",
+  "submit": false,
+  "attempts": [
+    {
+      "name": "A: plain tx, assembleTransaction",
+      "outcome": "built (fee fits uint32)"
+    },
+    {
+      "name": "B: fee-bump, inner fee 100 + sorobanData, outer int64 fee",
+      "innerFee": "100",
+      "outerFeeStroops": "3213912",
+      "outerFeeXlm": "0.3213912",
+      "capStroops": "60000000000",
+      "outcome": "built; not sent (simulate-only run)"
+    }
+  ],
+  "config": {
+    "operator": "GB73VDL7ULWUQZ3UU24OUJHB6GWTU5U4H4OOZ4LQ7YGX6EXQKBTDHS7A",
+    "operatorMatchesEnv": false,
+    "usdc": "CAZJ3LBW6IYNV7XNXGWARYAMWNQG4LD7WW5RWMWPVNNZP2IODPPP7ASV",
+    "payee": "GATSDLHHRP5DPAQJZO6XLW2L43HQAMAHBGRVXU4QILRMMQ32QH5HTGE5"
+  },
+  "planId": 26102600,
+  "installments": 3,
+  "buyer": "GBCV76RY4B4LRYP7XN4TUCKKXBLOQBLKG6BJRBKBISE7CTHJF4W5IHGP",
+  "simulation": {
+    "latestLedger": 5396288,
+    "resourceFeeStroops": "3213512",
+    "resourceFeeXlm": "0.3213512",
+    "totalFeeStroops": "3213612",
+    "totalFeeXlm": "0.3213612",
+    "exceedsUint32": false,
+    "resources": {
+      "footprint": {
+        "read_only": [
+          {
+            "contract_data": {
+              "contract": "CAVPFFH4WFPHI3525RFM7AOGUXOP3USLCN6IPOF7AK5PMNAGQAJCCTXP",
+              "key": "ledger_key_contract_instance",
+              "durability": "persistent"
+            }
+          },
+          {
+            "contract_code": {
+              "hash": "a28d240c3728f3415b73218597bb4b9f23c77384c4d7beda77a57300e88755b1"
+            }
+          }
+        ],
+        "read_write": [
+          {
+            "contract_data": {
+              "contract": "CAVPFFH4WFPHI3525RFM7AOGUXOP3USLCN6IPOF7AK5PMNAGQAJCCTXP",
+              "key": {
+                "vec": [
+                  {
+                    "symbol": "Gov"
+                  },
+                  {
+                    "u32": 26102600
+                  }
+                ]
+              },
+              "durability": "persistent"
+            }
+          },
+          {
+            "contract_data": {
+              "contract": "CAVPFFH4WFPHI3525RFM7AOGUXOP3USLCN6IPOF7AK5PMNAGQAJCCTXP",
+              "key": {
+                "vec": [
+                  {
+                    "symbol": "Inst"
+                  },
+                  {
+                    "u32": 26102600
+                  },
+                  {
+                    "u32": 0
+                  }
+                ]
+              },
+              "durability": "persistent"
+            }
+          },
+          {
+            "contract_data": {
+              "contract": "CAVPFFH4WFPHI3525RFM7AOGUXOP3USLCN6IPOF7AK5PMNAGQAJCCTXP",
+              "key": {
+                "vec": [
+                  {
+                    "symbol": "Inst"
+                  },
+                  {
+                    "u32": 26102600
+                  },
+                  {
+                    "u32": 1
+                  }
+                ]
+              },
+              "durability": "persistent"
+            }
+          },
+          {
+            "contract_data": {
+              "contract": "CAVPFFH4WFPHI3525RFM7AOGUXOP3USLCN6IPOF7AK5PMNAGQAJCCTXP",
+              "key": {
+                "vec": [
+                  {
+                    "symbol": "Inst"
+                  },
+                  {
+                    "u32": 26102600
+                  },
+                  {
+                    "u32": 2
+                  }
+                ]
+              },
+              "durability": "persistent"
+            }
+          },
+          {
+            "contract_data": {
+              "contract": "CAVPFFH4WFPHI3525RFM7AOGUXOP3USLCN6IPOF7AK5PMNAGQAJCCTXP",
+              "key": {
+                "vec": [
+                  {
+                    "symbol": "Plan"
+                  },
+                  {
+                    "u32": 26102600
+                  }
+                ]
+              },
+              "durability": "persistent"
+            }
+          }
+        ]
+      },
+      "instructions": 1160727,
+      "disk_read_bytes": 0,
+      "write_bytes": 1664
+    }
+  }
+}
