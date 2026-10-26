@@ -85,6 +85,29 @@ async function createPlan(corridor, planId, buyer, amount) {
   return r;
 }
 
+/** Lock expiry: the due date of the last locked installment + 7 days. */
+async function lockExpiry(planId, idxs) {
+  const st = await read(CONTRACTS.co, 'get_status', [u32(planId)], keys.feePayer.publicKey());
+  const last = st.value.installments[idxs[idxs.length - 1]];
+  return BigInt(last.due_ts) + 7n * 86_400n;
+}
+
+async function applyQuarterlyLock(planId, buyer, expiry) {
+  const idxs = [0, 1, 2];
+  expiry ??= await lockExpiry(planId, idxs);
+  const lockId = createHash('sha256').update(`chateaux-testnet-2026-10-26-lock-${planId}`).digest();
+  const r = await step('colombia', {
+    step: `apply_lock_co_${planId}_quarterly`, source: keys.operator, signers: [keys.operator], authSigners: [buyer],
+    invoke: {
+      contract: CONTRACTS.co, function: 'apply_lock',
+      args: [u32(planId), xdr.ScVal.scvVec(idxs.map(u32)), nativeToScVal(lockId), nativeToScVal(CO_RATE, { type: 'i128' }), nativeToScVal(expiry, { type: 'u64' })],
+    },
+  });
+  r.lockExpiryTs = Number(expiry);
+  save();
+  return r;
+}
+
 const deposit = (corridor, planId, buyer, amount) => step(corridor === 'co' ? 'colombia' : 'el_salvador', {
   step: `deposit_${corridor}_${planId}`, source: buyer, signers: [buyer], feeBumpBy: keys.feePayer,
   invoke: { contract: CONTRACTS[corridor], function: 'deposit', args: [u32(planId), nativeToScVal(amount, { type: 'i128' })] },
@@ -106,15 +129,9 @@ async function g2() {
 async function g3() {
   const buyer = await demoBuyer('CO_1', CO_M1_STROOPS);
   await deposit('co', 1001, buyer, CO_M1_STROOPS);
-  const lockId = createHash('sha256').update('chateaux-testnet-2026-10-26-lock-1001').digest();
-  const expiry = BigInt(Math.floor(Date.now() / 1000) + 30 * 86_400);
-  await step('colombia', {
-    step: 'apply_lock_co_1001_quarterly', source: keys.operator, signers: [keys.operator], authSigners: [buyer],
-    invoke: {
-      contract: CONTRACTS.co, function: 'apply_lock',
-      args: [u32(1001), xdr.ScVal.scvVec([0, 1, 2].map(u32)), nativeToScVal(lockId), nativeToScVal(CO_RATE, { type: 'i128' }), nativeToScVal(expiry, { type: 'u64' })],
-    },
-  });
+  // Recorded 2026-10-26 with expiry = now + 30 d, which is before M3's due date (now + 60 d).
+  // The plan cannot be re-locked (apply_lock needs Open installments), so 1001 stays as recorded.
+  await applyQuarterlyLock(1001, buyer, BigInt(Math.floor(Date.now() / 1000) + 30 * 86_400));
   const r = await step('colombia', {
     step: 'release_due_co_1001_M1', source: keys.operator, signers: [keys.operator],
     invoke: { contract: CONTRACTS.co, function: 'release_due', args: [u32(1001), u32(0)] },
@@ -169,7 +186,36 @@ async function pool() {
   console.log(json(state.pool.map((p) => [p.planId, p.corridor, p.m1Due, p.createFeeXlm])));
 }
 
+/** Pool prep: Colombia plans deposited for M1 and locked (expiry = last locked due + 7 d), so the
+ *  live step is one release_due(idx 0); El Salvador plans deposited for M1 (live: release_spot). */
+async function poolPrep() {
+  for (const p of state.pool) {
+    const co = p.corridor === 'colombia';
+    const name = `${co ? 'CO' : 'SV'}_P${p.planId % 10}`;
+    const buyer = generatedKey(`DEMO_BUYER_${name}_SECRET`, `demo buyer ${name}`);
+    if (buyer.publicKey() !== p.buyer) throw new Error(`buyer key mismatch for plan ${p.planId}`);
+    const st = await read(p.contract, 'get_status', [u32(p.planId)], keys.feePayer.publicKey());
+    const amount = co ? CO_M1_STROOPS : SV_M1_STROOPS;
+    if (BigInt(st.value.plan.balance_usdc) < amount) {
+      const r = await deposit(co ? 'co' : 'sv', p.planId, buyer, amount);
+      p.depositTx = r.hash;
+    }
+    if (co && st.value.installments[0].status !== 1 && !p.lockTx) {
+      const r = await applyQuarterlyLock(p.planId, buyer);
+      Object.assign(p, { lockTx: r.hash, lockExpiryTs: r.lockExpiryTs, lockedUsdM1Stroops: CO_M1_STROOPS.toString() });
+    }
+    p.liveStep = co ? 'release_due(idx 0)' : `release_spot(idx 0, ${SV_M1_STROOPS})`;
+    save();
+  }
+  writeFileSync(resolve(RUN_DIR, 'pool.json'), json({
+    date: '2026-10-26',
+    note: 'Live-demo plan pool. Each buyer is a testnet-only demo account (Modo demo: the platform acts for the buyer). M1 is already due and deposited; Colombia plans are locked at 3444.427 with expiry = last locked due + 7 days. The live step is one release per plan.',
+    plans: state.pool,
+  }) + '\n');
+  console.log(json(state.pool.map((p) => [p.planId, p.depositTx, p.lockTx ?? '-', p.liveStep])));
+}
+
 const cmd = process.argv[2];
-const run = { g2, g3, g4, pool }[cmd];
-if (!run) { console.error('usage: run-stories.mjs <g2|g3|g4|pool>'); process.exit(2); }
+const run = { g2, g3, g4, pool, 'pool-prep': poolPrep }[cmd];
+if (!run) { console.error('usage: run-stories.mjs <g2|g3|g4|pool|pool-prep>'); process.exit(2); }
 run().catch((e) => { console.error('FAILED', e.message); process.exit(1); });
