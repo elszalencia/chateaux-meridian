@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-26",
+  "note": "Live-demo plan pool. Each buyer is a testnet-only demo account (Modo demo: the platform acts for the buyer) holding the test USDC for M1; M1 is already due. Deposit, lock (Colombia) and release run live in the tour.",
+  "plans": [
+    {
+      "planId": 1101,
+      "corridor": "colombia",
+      "contract": "CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV",
+      "buyer": "GBIHYOVHQCXMTW23DJD4MPQX7E6LJEFXTWXABPJ5V4KBWZQJDYQTER7X",
+      "buyerUsdcStroops": "12500000000",
+      "installmentAmount": "4093125",
+      "amountUnit": "COP",
+      "m1DueTs": 1792922402,
+      "m1Due": true,
+      "createTx": "93c2daa6a23ac31f2010b656a995ee37b4bfc2901095fe156dc9e865f3ee5b83",
+      "createLedger": 5397044,
+      "createFeeXlm": "0.2791889"
+    },
+    {
+      "planId": 1102,
+      "corridor": "colombia",
+      "contract": "CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV",
+      "buyer": "GDEMGOOQQOGFJDMKERCRPLOSPBJWTRSFYTZ4RP3HL4RW4J4BGCFLR5G7",
+      "buyerUsdcStroops": "12500000000",
+      "installmentAmount": "4093125",
+      "amountUnit": "COP",
+      "m1DueTs": 1792922423,
+      "m1Due": true,
+      "createTx": "9627a2c3ef16bc39964b4efa7c39768b21c3d8c2ab74ace5039031f7ac6631c6",
+      "createLedger": 5397048,
+      "createFeeXlm": "0.2791889"
+    },
+    {
+      "planId": 1103,
+      "corridor": "colombia",
+      "contract": "CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV",
+      "buyer": "GA3MKVMSIQJES3CYYVQA2VMRDLZDQKXKCX7ZPXITKXRSMALPU3CDPZXK",
+      "buyerUsdcStroops": "12500000000",
+      "installmentAmount": "4093125",
+      "amountUnit": "COP",
+      "m1DueTs": 1792922442,
+      "m1Due": true,
+      "createTx": "485bb1c8130c72f937048af319279894b4105cc9168a76c1343090c00e3a7ef1",
+      "createLedger": 5397052,
+      "createFeeXlm": "0.2791889"
+    },
+    {
+      "planId": 2101,
+      "corridor": "el_salvador",
+      "contract": "CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF",
+      "buyer": "GBVI7EYH5NHW4XLYN5TYME4L3EZGWIH57QZ6WBC4NMZ3X52GDYIX3WOS",
+      "buyerUsdcStroops": "7500000000",
+      "installmentAmount": "75000",
+      "amountUnit": "USD cents",
+      "m1DueTs": 1792922463,
+      "m1Due": true,
+      "createTx": "7d9f586b1c7f85f628a7c7b0608ffbb76309a35d5ee15d22c466c1a76aeb45c6",
+      "createLedger": 5397056,
+      "createFeeXlm": "0.2791889"
+    },
+    {
+      "planId": 2102,
+      "corridor": "el_salvador",
+      "contract": "CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF",
+      "buyer": "GCHYU4DOBQ66NTQ67HPGTE3CX2QFX746ECXKE3SFF7HI436JW64OJM4N",
+      "buyerUsdcStroops": "7500000000",
+      "installmentAmount": "75000",
+      "amountUnit": "USD cents",
+      "m1DueTs": 1792922482,
+      "m1Due": true,
+      "createTx": "900f6122d9c5f2b4b4d80fcf7086e872d65aa8c22a9f43f741d4bbea6e3deb39",
+      "createLedger": 5397060,
+      "createFeeXlm": "0.2791889"
+    },
+    {
+      "planId": 2103,
+      "corridor": "el_salvador",
+      "contract": "CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF",
+      "buyer": "GAFG2HWWLO2OP363RJGHOYLR54AME4LTBKNPLTUPY3BGSA5PDWE6SQZI",
+      "buyerUsdcStroops": "7500000000",
+      "installmentAmount": "75000",
+      "amountUnit": "USD cents",
+      "m1DueTs": 1792922502,
+      "m1Due": true,
+      "createTx": "75980ec3e728facd3160aac109f8539e4fa64d2184a6373632f952898a4bc28c",
+      "createLedger": 5397064,
+      "createFeeXlm": "0.2791889"
+    }
+  ]
+}
