@@ -1,5 +1,5 @@
 #![no_std]
-//! `payment_plan`: the on-chain record of a Casa Puente down-payment schedule.
+//! `payment_plan`: the on-chain record of a Chateaux down-payment schedule.
 //!
 //! The doc comments on public items are kept to one line because they are compiled into the
 //! contract spec (and so into the Wasm every upload pays for); the full description of each
