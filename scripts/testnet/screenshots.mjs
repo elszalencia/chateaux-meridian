@@ -8,7 +8,8 @@ import { RUN_DIR, json } from './lib.mjs';
 const ev = JSON.parse(readFileSync(resolve(import.meta.dirname, '../../evidence/testnet-2026-10-26.json'), 'utf8'));
 const DIR = resolve(RUN_DIR, 'screenshots');
 mkdirSync(DIR, { recursive: true });
-const STORY = ['create_plan_co_1001', 'deposit_co_1001', 'apply_lock_co_1001_quarterly', 'release_due_co_1001_M1', 'deposit_sv_2001', 'release_spot_sv_2001_M1'];
+// Headline stories (8d2a pair). The first run's screenshots are kept in screenshots/first-run/.
+const STORY = ['create_plan_co_1004', 'deposit_co_1004', 'apply_lock_co_1004_quarterly', 'release_due_co_1004_M1', 'create_plan_sv_2004', 'deposit_sv_2004', 'release_spot_sv_2004_M1'];
 const targets = [
   { name: 'contract_colombia', url: ev.contracts.colombia.explorerUrl },
   { name: 'contract_el_salvador', url: ev.contracts.el_salvador.explorerUrl },

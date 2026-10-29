@@ -11,7 +11,7 @@ which business-day calendar sets grace and credit dates. Every plan belongs to o
 | Conversion leg | USD → COP through the off-ramp | none (USD end to end) |
 | Rate lock | yes | no |
 | Payee | the buyer's encargo at Fidudavivienda | the seller's account (option A or B) |
-| Contract instance | `PAYMENT_PLAN_CONTRACT_ID` (`CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV` since 2026-10-26; was `CAVPFFH4…CTXP`) | `PAYMENT_PLAN_CONTRACT_ID_SV` (`CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF` since 2026-10-26; was `CC5Y77X3…LEBQ`) |
+| Contract instance | `PAYMENT_PLAN_CONTRACT_ID` (`CA3NE2EXQLDDDXUZCAEWX2UFUMCWI4CYS32YGXQHLTJE7KTRW35D6WD2` since 2026-10-26; was `CAVPFFH4…CTXP`) | `PAYMENT_PLAN_CONTRACT_ID_SV` (`CACDLCHAKPJDVYRKJKK3KKMEBLBKLTYISYX6EQO54VQIZJX3CTUTVQGA` since 2026-10-26; was `CC5Y77X3…LEBQ`) |
 
 Both instances run the same Wasm. Everything that differs between corridors comes from one file,
 `config/corridors.ts`, which the services read through `corridorOf(plan)` and the web app reads

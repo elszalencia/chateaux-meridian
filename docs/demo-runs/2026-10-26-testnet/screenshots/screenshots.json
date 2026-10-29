@@ -1,44 +1,49 @@
 {
-  "takenAt": "2026-10-26T10:06:17.492Z",
+  "takenAt": "2026-10-26T12:21:39.193Z",
   "shots": [
     {
       "file": "contract_colombia.png",
-      "url": "https://stellar.expert/explorer/testnet/contract/CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV",
+      "url": "https://stellar.expert/explorer/testnet/contract/CA3NE2EXQLDDDXUZCAEWX2UFUMCWI4CYS32YGXQHLTJE7KTRW35D6WD2",
       "idShownOnPage": true
     },
     {
       "file": "contract_el_salvador.png",
-      "url": "https://stellar.expert/explorer/testnet/contract/CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF",
+      "url": "https://stellar.expert/explorer/testnet/contract/CACDLCHAKPJDVYRKJKK3KKMEBLBKLTYISYX6EQO54VQIZJX3CTUTVQGA",
       "idShownOnPage": true
     },
     {
-      "file": "create_plan_co_1001.png",
-      "url": "https://stellar.expert/explorer/testnet/tx/fdb7d7b97e08b21d3bb1039020a4767ae979e892e68f4aa95966345c516ba98a",
+      "file": "create_plan_co_1004.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/604dc03c6a8752e0474ff769ce93162177e459956559d613dc007b5ac60400c8",
       "idShownOnPage": true
     },
     {
-      "file": "deposit_co_1001.png",
-      "url": "https://stellar.expert/explorer/testnet/tx/9da3c22c528e9081a9bd5f8dd0c6f4b194e35a6c63a57a58d6e7ad3fa83166b6",
+      "file": "deposit_co_1004.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/7b65524307a07a3ba2bc4d2fa371c1b8f85cf1ac4dd56dccdf60a0e833f286d9",
       "idShownOnPage": true
     },
     {
-      "file": "apply_lock_co_1001_quarterly.png",
-      "url": "https://stellar.expert/explorer/testnet/tx/d67e446143f219227162f646c79b65d428206c0e6b5783dc4b7b6c67691492e4",
+      "file": "apply_lock_co_1004_quarterly.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/45c5f39a7a46eced3c69b018e19b2e07953f75e19a9dabf73e8d901aca3322b6",
       "idShownOnPage": true
     },
     {
-      "file": "release_due_co_1001_M1.png",
-      "url": "https://stellar.expert/explorer/testnet/tx/6f5726af8d87c4c0f2343b9b0d85e1d6a065143818b243296f56bff2cad1ca49",
+      "file": "release_due_co_1004_M1.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/3b1917981c6cd9a79c91d1a935f9cd8f3c8e9f11b6b899a991ee88dd8b0bb84c",
       "idShownOnPage": true
     },
     {
-      "file": "deposit_sv_2001.png",
-      "url": "https://stellar.expert/explorer/testnet/tx/8520af675abc968d5b7c404d9d38a3c516e9ea3c4a837bef0e4415de6c972b61",
+      "file": "create_plan_sv_2004.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/96c787856c023a14982a7ce00ea00bace40f341a1bc8096dd9b8051d5c48a396",
       "idShownOnPage": true
     },
     {
-      "file": "release_spot_sv_2001_M1.png",
-      "url": "https://stellar.expert/explorer/testnet/tx/96ca43992139cca799e827d58e99cd7b1e2e2aae8d8ec93d99665ab84bb59d43",
+      "file": "deposit_sv_2004.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/a451f54f60cd36680b68b943502ace0a9abb5621a35547097c5940a937202dd0",
+      "idShownOnPage": true
+    },
+    {
+      "file": "release_spot_sv_2004_M1.png",
+      "url": "https://stellar.expert/explorer/testnet/tx/87483b6c7aee9461d28c6859711656988b0a5a25bdc986f09d1df621503a8849",
       "idShownOnPage": true
     }
   ]

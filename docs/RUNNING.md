@@ -11,7 +11,7 @@ The app runs in two modes with identical screens:
 
 ## Deployed contract
 
-contract [`CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV`](https://stellar.expert/explorer/testnet/contract/CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV) (Colombia) and [`CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF`](https://stellar.expert/explorer/testnet/contract/CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF) (El Salvador) on Stellar testnet, both running Wasm `a28d240c3728f3415b73218597bb4b9f23c77384c4d7beda77a57300e88755b1` (schema v2), deployed 2026-10-26 with a new operator and a demo-issued test dollar (not Circle USDC); they replace `CAVPFFH4…CTXP` and `CC5Y77X3…LEBQ`, whose operator key is no longer available. The code here builds Wasm `8d2a440260ae26ad2ebe15abb91180208f631bd37d5dfe219f17c666bd3899ad` (adds the typed `AssetFrozen` error and `hold_frozen`). Its upload is no longer blocked: testnet's Soroban state target rose to 7 GB and the upload cost 2.03 XLM on 2026-10-26 (it was ~738 XLM on 2026-10-25). Evidence of the 2026-10-26 run: [evidence/testnet-2026-10-26.json](../evidence/testnet-2026-10-26.json).
+contract [`CA3NE2EXQLDDDXUZCAEWX2UFUMCWI4CYS32YGXQHLTJE7KTRW35D6WD2`](https://stellar.expert/explorer/testnet/contract/CA3NE2EXQLDDDXUZCAEWX2UFUMCWI4CYS32YGXQHLTJE7KTRW35D6WD2) (Colombia) and [`CACDLCHAKPJDVYRKJKK3KKMEBLBKLTYISYX6EQO54VQIZJX3CTUTVQGA`](https://stellar.expert/explorer/testnet/contract/CACDLCHAKPJDVYRKJKK3KKMEBLBKLTYISYX6EQO54VQIZJX3CTUTVQGA) (El Salvador) on Stellar testnet, both running Wasm `8d2a440260ae26ad2ebe15abb91180208f631bd37d5dfe219f17c666bd3899ad` (schema v2, with the typed `AssetFrozen` error and `hold_frozen`): the Wasm this branch builds. Deployed 2026-10-26 with a new operator and a demo-issued test dollar (not Circle USDC); they replace `CAVPFFH4…CTXP` and `CC5Y77X3…LEBQ`, whose operator key is no longer available. The upload is no longer blocked: testnet's Soroban state target rose to 7 GB; the upload cost 2.03 XLM and the first instance 32.70 XLM, mostly rent to extend the new code entry's TTL. Evidence of the 2026-10-26 run: [evidence/testnet-2026-10-26.json](../evidence/testnet-2026-10-26.json).
 
 ## Prerequisites
 
@@ -113,8 +113,8 @@ a **second instance** of the same Wasm, with its own payee:
 
 | Corridor | Contract | Wasm |
 | --- | --- | --- |
-| Colombia | [`CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV`](https://stellar.expert/explorer/testnet/contract/CDSXCY3KS7THFGIWZNYNMPHIERITXW4YFI6AD3I64R75ZYVNQDLLTFZV) | `a28d240c…755b1` (2026-10-26; replaces `CAVPFFH4…CTXP`) |
-| El Salvador | [`CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF`](https://stellar.expert/explorer/testnet/contract/CCNWBC5NN5EEWRLTAQ72URIOJ4MDLIAZCIQ3VIL7BUYPPLBPZOTI22MF) | `a28d240c…755b1` (2026-10-26, from the installed hash, no upload; replaces `CC5Y77X3…LEBQ`). On this instance the `cop_due` field holds USD cents. |
+| Colombia | [`CA3NE2EXQLDDDXUZCAEWX2UFUMCWI4CYS32YGXQHLTJE7KTRW35D6WD2`](https://stellar.expert/explorer/testnet/contract/CA3NE2EXQLDDDXUZCAEWX2UFUMCWI4CYS32YGXQHLTJE7KTRW35D6WD2) | `8d2a4402…899ad` (2026-10-26; replaces `CAVPFFH4…CTXP`) |
+| El Salvador | [`CACDLCHAKPJDVYRKJKK3KKMEBLBKLTYISYX6EQO54VQIZJX3CTUTVQGA`](https://stellar.expert/explorer/testnet/contract/CACDLCHAKPJDVYRKJKK3KKMEBLBKLTYISYX6EQO54VQIZJX3CTUTVQGA) | `8d2a4402…899ad` (2026-10-26; replaces `CC5Y77X3…LEBQ`). On this instance the `cop_due` field holds USD cents. |
 
 Corridor details (holidays, MoneyGram limits, payout options, the seller gate) are in
 [CORRIDORS.md](CORRIDORS.md).
